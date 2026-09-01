@@ -1,0 +1,180 @@
+/* ========================================= */
+/* TÍTULOS DE PÁGINAS */
+/* ========================================= */
+
+.page-title {
+  font-size: 40px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 30px;
+}
+
+
+/* ========================================= */
+/* CARDS */
+/* ========================================= */
+
+.card {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+
+/* ========================================= */
+/* BOTONES */
+/* ========================================= */
+
+.primary-button {
+  padding: 12px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-button:hover {
+  background-color: #f3f4f6;
+}
+
+
+/* ========================================= */
+/* INPUTS */
+/* ========================================= */
+
+.input-search {
+  width: 420px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  font-size: 16px;
+  background-color: white;
+}
+
+
+/* ========================================= */
+/* TABLAS */
+/* ========================================= */
+
+.datatable-container {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.datatable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.datatable th {
+  text-align: left;
+  padding: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.datatable td {
+  padding: 20px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.datatable tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+
+/* ========================================= */
+/* BADGES */
+/* ========================================= */
+
+.badge-success {
+  background-color: #16a34a;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.badge-danger {
+  background-color: #dc2626;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+
+/* ========================================= */
+/* SIDEBAR */
+/* ========================================= */
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  color: var(--text-primary);
+
+  transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background-color: #ececec;
+}
+
+.sidebar-link.active {
+  background-color: #e5e7eb;
+  font-weight: 600;
+}
+
+
+/* ========================================= */
+/* TOPBAR */
+/* ========================================= */
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #d1d5db;
+}
+
+
+/* ========================================= */
+/* RESPONSIVE */
+/* ========================================= */
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 32px;
+  }
+
+  .input-search {
+    width: 100%;
+  }
+
+  .datatable-container {
+    overflow-x: auto;
+  }
+}

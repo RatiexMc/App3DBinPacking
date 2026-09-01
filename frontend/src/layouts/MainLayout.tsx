@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
+
 import Sidebar from "../components/Sidebar";
+import TopBar from "../components/TopBar";
+
+import "../styles/layout.css";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -7,21 +11,16 @@ interface MainLayoutProps {
 
 function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div
-      style={{
-        display: "flex",
-      }}
-    >
+    <div className="layout">
       <Sidebar />
 
-      <main
-        style={{
-          flex: 1,
-          padding: "20px",
-        }}
-      >
-        {children}
-      </main>
+      <div className="content-area">
+        <TopBar />
+
+        <main className="main-content">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

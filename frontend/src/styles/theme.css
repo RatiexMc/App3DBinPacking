@@ -1,0 +1,47 @@
+/* ========================= */
+/* TEMA CLARO (DEFAULT) */
+/* ========================= */
+
+:root {
+  --background-color: #f5f5f5;
+
+  --sidebar-color: #fafafa;
+
+  --card-color: #ffffff;
+
+  --border-color: #e5e7eb;
+
+  --text-primary: #111827;
+
+  --text-secondary: #6b7280;
+
+  --primary-color: #1d4ed8;
+
+  --success-color: #16a34a;
+
+  --danger-color: #dc2626;
+}
+
+/* ========================= */
+/* FUTURO TEMA OSCURO */
+/* ========================= */
+
+[data-theme="dark"] {
+  --background-color: #111827;
+
+  --sidebar-color: #1f2937;
+
+  --card-color: #374151;
+
+  --border-color: #4b5563;
+
+  --text-primary: #ffffff;
+
+  --text-secondary: #d1d5db;
+
+  --primary-color: #60a5fa;
+
+  --success-color: #22c55e;
+
+  --danger-color: #ef4444;
+}
