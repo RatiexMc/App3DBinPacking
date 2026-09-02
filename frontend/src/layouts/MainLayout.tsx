@@ -3,21 +3,46 @@ import type { ReactNode } from "react";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
 
-import "../styles/layout.css";
+import { useThemeContext } from "../theme/ThemeContext";
+import { colors } from "../theme/colors";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 function MainLayout({ children }: MainLayoutProps) {
+  const { darkMode } = useThemeContext();
+
+  const currentColors = darkMode
+    ? colors.dark
+    : colors.light;
+
   return (
-    <div className="layout">
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+      }}
+    >
       <Sidebar />
 
-      <div className="content-area">
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor:
+            currentColors.background,
+        }}
+      >
         <TopBar />
 
-        <main className="main-content">
+        <main
+          style={{
+            flex: 1,
+            padding: "24px",
+          }}
+        >
           {children}
         </main>
       </div>

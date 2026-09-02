@@ -8,16 +8,26 @@ import HistoryIcon from "@mui/icons-material/History";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { useSidebar } from "../context/SidebarContext";
+import { useThemeContext } from "../theme/ThemeContext";
+import { colors } from "../theme/colors";
 
 function Sidebar() {
   const { collapsed } = useSidebar();
 
+  const { darkMode } = useThemeContext();
+
+  const currentColors = darkMode
+    ? colors.dark
+    : colors.light;
+
+  // Estilo de cada opción del menú
   const menuItemStyle = ({
     isActive,
   }: {
     isActive: boolean;
   }) => ({
     display: "flex",
+
     alignItems: "center",
 
     justifyContent: collapsed
@@ -28,17 +38,23 @@ function Sidebar() {
 
     textDecoration: "none",
 
-    color: isActive ? "#1976d2" : "#374151",
+    // Azul solamente para la opción activa
+    color: isActive
+      ? currentColors.primary
+      : currentColors.textSecondary,
 
+    // Fondo suave para opción activa
     backgroundColor: isActive
-      ? "#e3f2fd"
+      ? currentColors.primaryLight
       : "transparent",
 
-    padding: "12px 14px",
+    padding: collapsed
+      ? "12px"
+      : "12px 14px",
 
     borderRadius: "10px",
 
-    fontWeight: isActive ? 600 : 500,
+    fontWeight: isActive ? 700 : 500,
 
     transition: "all 0.25s ease",
   });
@@ -50,18 +66,20 @@ function Sidebar() {
 
         minHeight: "100vh",
 
-        backgroundColor: "#ffffff",
+        backgroundColor: currentColors.sidebar,
 
-        borderRight: "1px solid #e5e7eb",
+        borderRight: `1px solid ${currentColors.border}`,
 
         padding: "20px",
 
         display: "flex",
+
         flexDirection: "column",
 
         transition: "all 0.25s ease",
       }}
     >
+      {/* Logo */}
       <div
         style={{
           marginBottom: "40px",
@@ -73,9 +91,14 @@ function Sidebar() {
             <h2
               style={{
                 margin: 0,
+
                 fontSize: "20px",
+
                 fontWeight: 700,
-                color: "#111827",
+
+                letterSpacing: "-0.5px",
+
+                color: currentColors.textPrimary,
               }}
             >
               Darnel Paraguay SA
@@ -83,9 +106,13 @@ function Sidebar() {
 
             <p
               style={{
-                marginTop: "6px",
-                color: "#6b7280",
-                fontSize: "14px",
+                marginTop: "8px",
+
+                fontSize: "13px",
+
+                fontWeight: 500,
+
+                color: currentColors.textSecondary,
               }}
             >
               Sistema de Optimización
@@ -95,20 +122,26 @@ function Sidebar() {
           <div
             style={{
               width: "40px",
+
               height: "40px",
+
               margin: "0 auto",
-
-              backgroundColor: "#1976d2",
-
-              color: "#ffffff",
 
               borderRadius: "10px",
 
+              backgroundColor:
+                currentColors.primary,
+
+              color: "#ffffff",
+
               display: "flex",
+
               alignItems: "center",
+
               justifyContent: "center",
 
               fontWeight: 700,
+
               fontSize: "18px",
             }}
           >
@@ -116,6 +149,8 @@ function Sidebar() {
           </div>
         )}
       </div>
+
+      {/* Menú */}
       <div
         style={{
           display: "flex",

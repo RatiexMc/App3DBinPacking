@@ -1,5 +1,8 @@
 import DashboardCard from "../components/DashboardCard";
 
+import { useThemeContext } from "../theme/ThemeContext";
+import { colors } from "../theme/colors";
+
 // Datos simulados (Mock Data)
 // Más adelante estos valores vendrán desde PostgreSQL
 const dashboardData = {
@@ -17,17 +20,36 @@ const dashboardData = {
 };
 
 function Dashboard() {
+  // Obtenemos el estado actual del tema
+  const { darkMode } = useThemeContext();
+
+  // Seleccionamos la paleta de colores adecuada
+  const currentColors = darkMode
+    ? colors.dark
+    : colors.light;
+
   return (
     <div>
-      {/* Título de la página */}
-      <h1>Inicio</h1>
+      {/* Título principal de la página */}
+      <h1
+        style={{
+          color: currentColors.textPrimary,
+        }}
+      >
+        Inicio
+      </h1>
 
-      {/* Saludo principal */}
-      <div style={{ marginTop: "30px" }}>
+      {/* Saludo de bienvenida */}
+      <div
+        style={{
+          marginTop: "30px",
+        }}
+      >
         <h1
           style={{
             fontSize: "48px",
             marginBottom: "10px",
+            color: currentColors.textPrimary,
           }}
         >
           Hola {dashboardData.nombreUsuario} !
@@ -35,7 +57,7 @@ function Dashboard() {
 
         <p
           style={{
-            color: "#666",
+            color: currentColors.textSecondary,
             fontSize: "20px",
           }}
         >
@@ -43,7 +65,7 @@ function Dashboard() {
         </p>
       </div>
 
-      {/* Contenedor de tarjetas */}
+      {/* Contenedor general de tarjetas */}
       <div
         style={{
           display: "flex",
@@ -52,28 +74,40 @@ function Dashboard() {
           flexWrap: "wrap",
         }}
       >
-        {/* Tarjeta 1 */}
+        {/* Tarjeta: Productos cargados */}
         <DashboardCard
           title="Productos Cargados"
           value={dashboardData.productosCargados}
         />
 
-        {/* Tarjeta 2 */}
+        {/* Tarjeta: Optimizaciones realizadas */}
         <DashboardCard
           title="Optimizaciones Realizadas"
           value={dashboardData.optimizacionesRealizadas}
         />
 
-        {/* Tarjeta 3 */}
+        {/* Tarjeta: Última carga realizada */}
         <div
           style={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #d9d9d9",
+            backgroundColor: currentColors.card,
+
+            border: `1px solid ${currentColors.border}`,
+
+            color: currentColors.textPrimary,
+
             borderRadius: "10px",
+
             padding: "24px",
+
             minWidth: "280px",
+
             minHeight: "130px",
-            boxShadow: "0px 2px 5px rgba(0,0,0,0.05)",
+
+            // En modo oscuro eliminamos la sombra
+            // para evitar contrastes extraños
+            boxShadow: darkMode
+              ? "none"
+              : "0px 2px 5px rgba(0,0,0,0.05)",
           }}
         >
           <h3>Última carga</h3>

@@ -1,3 +1,6 @@
+import { useThemeContext } from "../theme/ThemeContext";
+import { colors } from "../theme/colors";
+
 interface Props {
   value: string;
   onChange: (
@@ -6,13 +9,35 @@ interface Props {
 }
 
 function SearchBar({ value, onChange }: Props) {
+  const { darkMode } = useThemeContext();
+
+  const currentColors = darkMode
+    ? colors.dark
+    : colors.light;
+
   return (
     <input
-      className="input-search"
       type="text"
       placeholder="Buscar..."
       value={value}
       onChange={onChange}
+      style={{
+        padding: "10px 14px",
+
+        minWidth: "260px",
+
+        borderRadius: "8px",
+
+        border: `1px solid ${currentColors.border}`,
+
+        backgroundColor: currentColors.card,
+
+        color: currentColors.textPrimary,
+
+        outline: "none",
+
+        fontSize: "14px",
+      }}
     />
   );
 }
