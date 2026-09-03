@@ -1,7 +1,11 @@
 import PageHeader from "../components/PageHeader";
 import ActionButton from "../components/ActionButton";
 
+import { useNavigate } from "react-router-dom";
+
 function FotoPicking() {
+  const navigate = useNavigate();
+
   return (
     <div>
       <PageHeader title="Foto Picking" />
@@ -9,7 +13,7 @@ function FotoPicking() {
       <div
         className="card"
         style={{
-          maxWidth: "600px",
+          maxWidth: "700px",
         }}
       >
         <h2>Captura de Imagen</h2>
@@ -28,9 +32,49 @@ function FotoPicking() {
         <div
           style={{
             marginTop: "20px",
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
           }}
         >
-          <ActionButton text="Procesar Imagen" />
+          <ActionButton
+            text="Procesar Imagen"
+          />
+
+          <ActionButton
+            text="Ver Resultado"
+            onClick={() =>
+              navigate("/optimizacion")
+            }
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "12px",
+            borderRadius: "8px",
+            backgroundColor: "#f3f4f6",
+          }}
+        >
+          Estado actual: Esperando imagen
+        </div>
+
+        <div
+          style={{
+            marginTop: "25px",
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <span>① Cargar Imagen</span>
+          <span>→</span>
+          <span>② Procesar OCR</span>
+          <span>→</span>
+          <span>③ Optimizar Carga</span>
+          <span>→</span>
+          <span>④ Ver Resultado</span>
         </div>
 
         <div

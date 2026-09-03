@@ -6,7 +6,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import HistoryIcon from "@mui/icons-material/History";
 import SettingsIcon from "@mui/icons-material/Settings";
-
+import PsychologyIcon from "@mui/icons-material/Psychology";
 import { useSidebar } from "../context/SidebarContext";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
@@ -188,11 +188,18 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
+          to="/optimizacion"
+          style={menuItemStyle}
+        >
+          <PsychologyIcon />
+          {!collapsed && "Optimización"}
+        </NavLink>
+        <NavLink
           to="/historial"
           style={menuItemStyle}
         >
           <HistoryIcon />
-          {!collapsed && "ListPicking"}
+          {!collapsed && "Historial"}
         </NavLink>
 
         <NavLink

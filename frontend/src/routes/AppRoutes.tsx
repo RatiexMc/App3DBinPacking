@@ -6,7 +6,7 @@ import Camiones from "../pages/Camiones";
 import Historial from "../pages/Historial";
 import Configuracion from "../pages/Configuracion";
 import FotoPicking from "../pages/FotoPicking";
-
+import Optimizacion from "../pages/Optimizacion";
 import MainLayout from "../layouts/MainLayout";
 
 function AppRoutes() {
@@ -48,7 +48,14 @@ function AppRoutes() {
             </MainLayout>
           }
         />
-
+        <Route
+          path="/optimizacion"
+          element={
+            <MainLayout>
+              <Optimizacion />
+            </MainLayout>
+          }
+        />
         <Route
           path="/historial"
           element={
@@ -57,7 +64,6 @@ function AppRoutes() {
             </MainLayout>
           }
         />
-
         <Route
           path="/configuracion"
           element={

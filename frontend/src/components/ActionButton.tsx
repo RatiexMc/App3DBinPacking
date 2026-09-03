@@ -3,9 +3,15 @@ import { colors } from "../theme/colors";
 
 interface Props {
   text: string;
+
+  // Opcional
+  onClick?: () => void;
 }
 
-function ActionButton({ text }: Props) {
+function ActionButton({
+  text,
+  onClick,
+}: Props) {
   const { darkMode } = useThemeContext();
 
   const currentColors = darkMode
@@ -14,6 +20,7 @@ function ActionButton({ text }: Props) {
 
   return (
     <button
+      onClick={onClick}
       style={{
         backgroundColor: currentColors.primary,
 
