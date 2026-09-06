@@ -1,32 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import PageHeader from "../components/PageHeader";
 import PageActions from "../components/PageActions";
 import DataTable from "../components/DataTable";
 
 function Productos() {
+  // Estado para el texto de búsqueda
   const [busqueda, setBusqueda] = useState("");
 
-  const rows = [
-    [
-      "FIG-123",
-      "Tortera",
-      10,
-      10,
-      10,
-      <span className="badge-success">Sí</span>,
-      "4",
-    ],
-    [
-      "FIG-124",
-      "Vaso 500ml",
-      12,
-      12,
-      18,
-      <span className="badge-success">Sí</span>,
-      "2",
-    ],
-  ];
+  // Estado donde guardaremos las filas provenientes de la API
+  const [rows, setRows] = useState<any[]>([]);
+
+  // Se ejecuta una sola vez al abrir la página
+  useEffect(() => {
+    cargarProductos();
+  }, []);
+
+  // Función que consulta nuestra API FastAPI
+  const cargarProductos = async () => {
+    try {
+      // Llamada al endpoint que ya creamos
+      const respuesta = await fetch(
+        "http://127.0.0.1:8000/productos"
+      );
+
+      // Convertir la respuesta JSON a objeto JavaScript
+      const datos = await respuesta.json();
+
+      // Adaptamos los datos al formato que usa DataTable
+      const filas = datos.map((producto: any) => [
+        producto.codigo,
+        producto.descripcion,
+        producto.largo,
+        producto.ancho,
+        producto.alto,
+
+        producto.apilable ? (
+          <span className="badge-success">Sí</span>
+        ) : (
+          <span className="badge-danger">No</span>
+        ),
+
+        producto.categoria,
+      ]);
+
+      // Guardamos las filas en el estado
+      setRows(filas);
+    } catch (error) {
+      console.error(
+        "Error al cargar productos:",
+        error
+      );
+    }
+  };
 
   return (
     <div>

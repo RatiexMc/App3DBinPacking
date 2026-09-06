@@ -1,29 +1,32 @@
-from database.conexion import conectar
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from API.productos import router as productos_router
 
-try:
-    # 1. Conexión y creación de cursor
-    conn = conectar()
-    cursor = conn.cursor()
+app = FastAPI(
+    title="API App 3D Bin Packing",
+    version="1.0.0"
+)
 
-    # 2. Consultar Productos
-    cursor.execute("SELECT * FROM productos;")
-    productos = cursor.fetchall()
+app.add_middleware(
+    CORSMiddleware,
 
-    print("--- Productos encontrados ---")
-    for producto in productos:
-        print(producto)
+    allow_origins=[
+        "http://localhost:5173"
+    ],
 
-    # 3. Consultar Camiones
-    cursor.execute("SELECT * FROM camiones;")
-    camiones = cursor.fetchall()
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    print("\n--- Camiones encontrados ---")
-    for camion in camiones:
-        print(camion)
 
-    # 4. Cerrar conexiones
-    cursor.close()
-    conn.close()
 
-except Exception as e:
-    print("Error:", repr(e))
+app.include_router(productos_router)
+
+
+@app.get("/")
+def inicio():
+
+    return {
+        "mensaje": "API funcionando correctamente"
+    }
