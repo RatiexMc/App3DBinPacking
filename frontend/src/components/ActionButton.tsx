@@ -4,7 +4,7 @@ import { colors } from "../theme/colors";
 interface Props {
   text: string;
 
-  // Opcional
+  // Función opcional que se ejecutará al hacer click
   onClick?: () => void;
 }
 

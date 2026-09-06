@@ -6,11 +6,15 @@ import { colors } from "../theme/colors";
 interface DataTableProps {
   headers: string[];
   rows: ReactNode[][];
+  selectedRow?: number | null;
+  onRowSelect?: (index: number) => void;
 }
 
 function DataTable({
   headers,
   rows,
+  selectedRow,
+  onRowSelect,
 }: DataTableProps) {
   // Obtenemos el tema actual
   const { darkMode } = useThemeContext();
@@ -24,13 +28,9 @@ function DataTable({
     <div
       style={{
         backgroundColor: currentColors.card,
-
         border: `1px solid ${currentColors.border}`,
-
         borderRadius: "12px",
-
         overflow: "hidden",
-
         marginTop: "20px",
       }}
     >
@@ -53,11 +53,8 @@ function DataTable({
                 key={header}
                 style={{
                   padding: "14px",
-
                   textAlign: "left",
-
                   color: currentColors.textPrimary,
-
                   borderBottom: `1px solid ${currentColors.border}`,
                 }}
               >
@@ -71,8 +68,18 @@ function DataTable({
           {rows.map((row, rowIndex) => (
             <tr
               key={rowIndex}
+              onClick={() => onRowSelect?.(rowIndex)}
               style={{
                 borderBottom: `1px solid ${currentColors.border}`,
+
+                cursor: "pointer",
+
+                backgroundColor:
+                  selectedRow === rowIndex
+                    ? darkMode
+                      ? "#1E40AF"
+                      : "#DBEAFE"
+                    : "transparent",
               }}
             >
               {row.map((cell, cellIndex) => (
@@ -80,7 +87,6 @@ function DataTable({
                   key={cellIndex}
                   style={{
                     padding: "14px",
-
                     color: currentColors.textPrimary,
                   }}
                 >

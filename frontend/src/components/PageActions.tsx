@@ -3,14 +3,21 @@ import ActionButton from "./ActionButton";
 
 interface PageActionsProps {
   value: string;
+
   onChange: (
     e: React.ChangeEvent<HTMLInputElement>
   ) => void;
+
+  onAdd?: () => void;
+
+  onDelete?: () => void;
 }
 
 function PageActions({
   value,
   onChange,
+  onAdd,
+  onDelete,
 }: PageActionsProps) {
   return (
     <div
@@ -21,18 +28,33 @@ function PageActions({
         marginBottom: "30px",
       }}
     >
+      {/* Buscador */}
       <SearchBar
         value={value}
         onChange={onChange}
       />
 
-      <ActionButton text="Añadir" />
+      {/* Futuro POST */}
 
+      <ActionButton
+
+      text="Añadir"
+      
+      onClick={onAdd}
+      
+    />
+
+      {/* Futuro PUT */}
       <ActionButton text="Modificar" />
 
-      <ActionButton text="Borrar" />
+      {/* DELETE */}
+      <ActionButton
+        text="Borrar"
+        onClick={onDelete}
+      />
     </div>
   );
 }
 
 export default PageActions;
+``
