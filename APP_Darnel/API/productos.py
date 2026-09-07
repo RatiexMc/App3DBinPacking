@@ -21,6 +21,26 @@ def crear_producto(producto: ProductoCreate):
 
     cursor.execute(
         """
+        SELECT 1
+        FROM productos
+        WHERE codigo = %s
+        """,
+        (producto.codigo,)
+    )
+
+    existe = cursor.fetchone()
+
+    if existe:
+
+        cursor.close()
+        conn.close()
+
+        return {
+            "error": "El código ya existe"
+        }
+
+    cursor.execute(
+        """
         INSERT INTO productos
         (
             codigo,
@@ -58,6 +78,7 @@ def crear_producto(producto: ProductoCreate):
     return {
         "mensaje": "Producto creado correctamente"
     }
+
 
 @router.get("/productos")
 def obtener_productos():
@@ -122,4 +143,78 @@ def eliminar_producto(id_producto: int):
 
     return {
         "mensaje": "Producto eliminado correctamente"
+    }
+
+@router.put("/productos/{id_producto}")
+def actualizar_producto(
+    id_producto: int,
+    producto: ProductoCreate
+):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT 1
+        FROM productos
+        WHERE codigo = %s
+        AND id_producto <> %s
+        """,
+        (
+            producto.codigo,
+            id_producto
+        )
+    )
+
+    print("================================")
+    print("ID recibido:", id_producto)
+    print("Codigo recibido:", producto.codigo)
+
+    existe = cursor.fetchone()
+
+    print("Resultado SELECT:", existe)
+    print("================================")
+
+    if existe:
+        cursor.close()
+        conn.close()
+
+        return {
+            "error": "El código ya existe"
+        }
+
+    cursor.execute(
+        """
+        UPDATE productos
+        SET
+            codigo = %s,
+            descripcion = %s,
+            largo = %s,
+            ancho = %s,
+            alto = %s,
+            peso = %s,
+            apilable = %s,
+            categoria_peso = %s
+        WHERE id_producto = %s
+        """,
+        (
+            producto.codigo,
+            producto.descripcion,
+            producto.largo,
+            producto.ancho,
+            producto.alto,
+            producto.peso,
+            producto.apilable,
+            producto.categoria_peso,
+            id_producto
+        )
+    )
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "mensaje": "Producto actualizado correctamente"
     }

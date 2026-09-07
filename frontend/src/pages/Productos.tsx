@@ -5,6 +5,7 @@ import PageActions from "../components/PageActions";
 import DataTable from "../components/DataTable";
 import ConfirmDialog from "../components/ConfirmDialog";
 import ProductoModal from "../components/ProductoModal";
+import Notification from "../components/Notification";
 
 function Productos() {
 
@@ -12,6 +13,9 @@ function Productos() {
   // BÚSQUEDA
   // ==========================================
   const [busqueda, setBusqueda] = useState("");
+
+
+
 
   // ==========================================
   // MODALES
@@ -22,6 +26,22 @@ function Productos() {
   const [showProductoModal, setShowProductoModal] =
     useState(false);
 
+  const [showNotification, setShowNotification] =
+    useState(false);
+
+  const [notificationMessage, setNotificationMessage] =
+    useState("");
+
+  const [notificationType, setNotificationType] =
+    useState<"success" | "error">(
+      "error"
+    );
+
+
+
+
+
+
   // ==========================================
   // DATOS DE TABLA
   // ==========================================
@@ -29,6 +49,10 @@ function Productos() {
 
   // Productos completos provenientes de la API
   const [productos, setProductos] = useState<any[]>([]);
+
+
+  const [productosFiltrados, setProductosFiltrados] =
+    useState<any[]>([]);
 
   // ==========================================
   // SELECCIÓN
@@ -38,6 +62,9 @@ function Productos() {
 
   const [selectedProductId, setSelectedProductId] =
     useState<number | null>(null);
+
+  const [productoEditar, setProductoEditar] =
+    useState<any | null>(null);
 
   // ==========================================
   // CARGAR PRODUCTOS AL INICIAR
@@ -61,7 +88,8 @@ function Productos() {
 
       // Guardamos la lista completa
       setProductos(datos);
-
+      setProductosFiltrados(datos);
+      console.log(datos);
       // Adaptamos al formato de DataTable
       const filas = datos.map((producto: any) => [
 
@@ -102,6 +130,58 @@ function Productos() {
     }
   };
 
+
+
+
+
+
+
+  useEffect(() => {
+    const filtrados =
+      productos.filter((producto) =>
+        producto.codigo
+          .toLowerCase()
+          .includes(
+            busqueda.toLowerCase()
+          ) ||
+        producto.descripcion
+          .toLowerCase()
+          .includes(
+            busqueda.toLowerCase()
+          )
+      );
+
+    setProductosFiltrados(filtrados);
+
+    const filas = filtrados.map(
+      (producto: any) => [
+        producto.codigo,
+        producto.descripcion,
+        producto.largo,
+        producto.ancho,
+        producto.alto,
+        producto.apilable
+          ? (
+            <span className="badge-success">
+              Sí
+            </span>
+          )
+          : (
+            <span className="badge-danger">
+              No
+            </span>
+          ),
+        producto.categoria,
+      ]
+    );
+
+    setRows(filas);
+  }, [busqueda, productos]);
+
+
+
+
+
   // ==========================================
   // SELECCIONAR PRODUCTO
   // ==========================================
@@ -112,8 +192,8 @@ function Productos() {
     setSelectedRow(rowIndex);
 
     const productoSeleccionado =
-      productos[rowIndex];
-
+      productosFiltrados[rowIndex];
+      
     setSelectedProductId(
       productoSeleccionado.id_producto
     );
@@ -132,22 +212,61 @@ function Productos() {
     setShowProductoModal(true);
   };
 
+
+
+
+  const editarProducto = () => {
+
+    if (selectedRow === null) {
+
+      setNotificationType("error");
+
+      setNotificationMessage(
+        "Seleccione un producto primero"
+      );
+
+      setShowNotification(true);
+
+      return;
+    }
+
+    setProductoEditar(
+      productosFiltrados[selectedRow]
+    );
+
+    setShowProductoModal(true);
+  };
+
+
+
+
+
+
+
+
+
   // ==========================================
   // ABRIR MODAL DE ELIMINACIÓN
   // ==========================================
+
   const borrarProducto = () => {
 
-    if (!selectedProductId) {
+    if (selectedProductId === null) {
 
-      alert(
+      setNotificationType("error");
+
+      setNotificationMessage(
         "Seleccione un producto primero"
       );
+
+      setShowNotification(true);
 
       return;
     }
 
     setShowDeleteDialog(true);
   };
+
 
   // ==========================================
   // ELIMINAR PRODUCTO
@@ -200,6 +319,7 @@ function Productos() {
           )
         }
         onAdd={abrirModalProducto}
+        onEdit={editarProducto}
         onDelete={borrarProducto}
       />
 
@@ -234,14 +354,23 @@ function Productos() {
       {/* Modal Nuevo Producto */}
       <ProductoModal
         open={showProductoModal}
-        onClose={() =>
-          setShowProductoModal(false)
-        }
+        producto={productoEditar}
+        onClose={() => {
+          setProductoEditar(null);
+          setShowProductoModal(false);
+        }}
         onSuccess={() => {
           cargarProductos();
         }}
       />
-
+      <Notification
+        open={showNotification}
+        message={notificationMessage}
+        type={notificationType}
+        onClose={() =>
+          setShowNotification(false)
+        }
+      />
     </div>
   );
 }

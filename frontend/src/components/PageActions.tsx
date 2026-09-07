@@ -10,6 +10,8 @@ interface PageActionsProps {
 
   onAdd?: () => void;
 
+  onEdit?: () => void;
+
   onDelete?: () => void;
 }
 
@@ -17,6 +19,7 @@ function PageActions({
   value,
   onChange,
   onAdd,
+  onEdit,
   onDelete,
 }: PageActionsProps) {
   return (
@@ -38,14 +41,17 @@ function PageActions({
 
       <ActionButton
 
-      text="Añadir"
-      
-      onClick={onAdd}
-      
-    />
+        text="Añadir"
+
+        onClick={onAdd}
+
+      />
 
       {/* Futuro PUT */}
-      <ActionButton text="Modificar" />
+      <ActionButton
+        text="Modificar"
+        onClick={onEdit}
+      />
 
       {/* DELETE */}
       <ActionButton

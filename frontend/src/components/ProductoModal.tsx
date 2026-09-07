@@ -1,5 +1,6 @@
 import {
   useState,
+  useEffect,
   type CSSProperties,
 } from "react";
 
@@ -10,12 +11,14 @@ import Notification from "./Notification";
 
 interface ProductoModalProps {
   open: boolean;
+  producto?: any;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 function ProductoModal({
   open,
+  producto,
   onClose,
   onSuccess,
 }: ProductoModalProps) {
@@ -75,6 +78,39 @@ function ProductoModal({
     useState<"success" | "error">(
       "success"
     );
+
+
+  useEffect(() => {
+    if (producto) {
+      setCodigo(producto.codigo || "");
+      setDescripcion(producto.descripcion || "");
+
+      setLargo(
+        producto.largo?.toString() || ""
+      );
+
+      setAncho(
+        producto.ancho?.toString() || ""
+      );
+
+      setAlto(
+        producto.alto?.toString() || ""
+      );
+
+      setPeso(
+        producto.peso?.toString() || ""
+      );
+
+      setApilable(
+        producto.apilable ?? true
+      );
+
+      setCategoriaPeso(
+        producto.categoria?.toString() || "1"
+      );
+    }
+  }, [producto]);
+
 
   // ==================================
   // SI EL MODAL ESTÁ CERRADO
@@ -154,80 +190,97 @@ function ProductoModal({
 
       return;
     }
-
+    /* COMENTANDO LA CONDICION POR OCULTAR "PESO" EN VENTANA DE MODIFICAR DE PRODUCTOS
     if (Number(peso) <= 0) {
-
       setNotificationType("error");
-
       setNotificationMessage(
         "Peso inválido."
       );
-
       setShowNotification(true);
-
       return;
     }
-
+    */
     try {
 
+      const url = producto
+        ? `http://127.0.0.1:8000/productos/${producto.id_producto}`
+        : "http://127.0.0.1:8000/productos";
+
+      const metodo = producto
+        ? "PUT"
+        : "POST";
+
       const respuesta =
-        await fetch(
-          "http://127.0.0.1:8000/productos",
-          {
-            method: "POST",
+        await fetch(url, {
+          method: metodo,
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-            body: JSON.stringify({
-              codigo,
-              descripcion,
+          body: JSON.stringify({
 
-              largo:
-                Number(largo),
 
-              ancho:
-                Number(ancho),
 
-              alto:
-                Number(alto),
+            codigo,
+            descripcion,
 
-              peso:
-                Number(peso),
+            largo:
+              Number(largo),
 
-              apilable,
+            ancho:
+              Number(ancho),
 
-              categoria_peso:
-                Number(
-                  categoriaPeso
-                ),
-            }),
+            alto:
+              Number(alto),
+
+            peso: 0,
+            //     Number(peso),
+
+            apilable,
+
+            categoria_peso:
+              Number(
+                categoriaPeso
+              ),
           }
-        );
+          ),
+        });
 
-      if (!respuesta.ok) {
 
+
+
+      const datos = await respuesta.json();
+
+
+      if (
+        datos.error
+      ) {
         setNotificationType(
           "error"
         );
 
         setNotificationMessage(
-          "No se pudo guardar el producto. Verifique si el código ya existe."
+          datos.error
         );
 
-        setShowNotification(true);
+        setShowNotification(
+          true
+        );
 
         return;
       }
+
 
       setNotificationType(
         "success"
       );
 
       setNotificationMessage(
-        "Producto creado correctamente."
+        producto
+          ? "Producto actualizado correctamente."
+          : "Producto creado correctamente."
       );
 
       setShowNotification(true);
@@ -351,7 +404,10 @@ function ProductoModal({
               currentColors.textPrimary,
           }}
         >
-          Nuevo Producto
+          {producto
+            ? "Editar Producto"
+            : "Nuevo Producto"}
+
         </h2>
 
         <p
@@ -364,7 +420,9 @@ function ProductoModal({
               currentColors.textSecondary,
           }}
         >
-          Complete los datos del producto.
+          {producto
+            ? "Modifique los datos del producto."
+            : "Complete los datos del producto."}
         </p>
 
         <div
@@ -468,7 +526,7 @@ function ProductoModal({
           </div>
 
           {/* Peso */}
-
+          {/*OCULTAR "PESO" DE LA VENTANA DE "MODIFICAR" DE PRODUCTOS
           <input
             type="number"
             placeholder="Peso"
@@ -480,7 +538,7 @@ function ProductoModal({
             }
             style={inputStyle}
           />
-
+*/}
           {/* Apilable */}
 
           <label
@@ -575,7 +633,9 @@ function ProductoModal({
               cursor: "pointer",
             }}
           >
-            Guardar
+            {producto
+              ? "Actualizar"
+              : "Guardar"}
           </button>
         </div>
       </div>
