@@ -97,7 +97,7 @@ def obtener_productos():
             apilable,
             categoria_peso
         FROM productos
-        ORDER BY id_producto;
+        ORDER BY codigo;
     """)
 
     productos = cursor.fetchall()
