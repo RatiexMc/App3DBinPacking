@@ -10,3 +10,7 @@ body {
 background-color: transparent;
 
 }
+input::placeholder {
+color: #CBD5E1;
+opacity: 1;
+}
