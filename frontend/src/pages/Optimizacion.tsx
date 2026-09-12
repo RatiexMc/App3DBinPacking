@@ -1,3 +1,4 @@
+import { useState } from "react";
 import PageHeader from "../components/PageHeader";
 import DashboardCard from "../components/DashboardCard";
 import Card from "../components/Card";
@@ -14,6 +15,126 @@ function Optimizacion() {
   const currentColors = darkMode
     ? colors.dark
     : colors.light;
+
+  const [chofer, setChofer] = useState("Junior");
+
+  const [codigo, setCodigo] = useState("");
+
+  const [cantidad, setCantidad] = useState(1);
+  const [productos, setProductos] = useState<any[]>([]);
+
+  const [resultadoReal, setResultadoReal] =
+    useState<any>(null);
+
+  const camionReal =
+    resultadoReal ? chofer : "-";
+
+  const productosReales =
+    resultadoReal
+      ? productos.length
+      : 0;
+
+  const cajasReales =
+    resultadoReal
+      ? resultadoReal.cajas.length
+      : 0;
+
+
+  const ocupacionReal =
+    resultadoReal
+      ? `${resultadoReal.ocupacion}%`
+      : "0%";
+
+
+  const ejecutarOptimizacion = async () => {
+    try {
+      const respuesta = await fetch(
+        "http://127.0.0.1:8000/optimizar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+
+
+          body: JSON.stringify({
+            nombre_chofer: chofer,
+            productos: productos,
+          }),
+
+
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      console.log("Resultado:", datos);
+      setResultadoReal(datos);
+
+
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const agregarProducto = () => {
+
+
+
+
+
+    if (!codigo.trim()) return;
+
+    setProductos([
+      ...productos,
+      {
+        codigo,
+        cantidad
+      }
+    ]);
+
+    setCodigo("");
+    setCantidad(1);
+  };
+
+
+
+  const eliminarProducto = (
+    indexEliminar: number
+  ) => {
+
+    setProductos(
+
+      productos.filter(
+        (_, index) =>
+          index !== indexEliminar
+      )
+
+    );
+
+  };
+
+
+
+
+  const nuevaCarga = () => {
+
+    setProductos([]);
+
+    setResultadoReal(null);
+
+    setCodigo("");
+
+    setCantidad(1);
+
+  };
+
+
+
+
 
   // =========================
   // DATOS SIMULADOS
@@ -40,6 +161,126 @@ function Optimizacion() {
       {/* TÍTULO */}
       {/* ========================= */}
       <PageHeader title="Optimización de Carga" />
+      <Card>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px",
+            marginBottom: "20px",
+          }}
+        >
+          <h3>Ingreso Manual</h3>
+
+
+          <input
+            type="text"
+            value={chofer}
+            onChange={(e) => setChofer(e.target.value)}
+            disabled={productos.length > 0}
+          />
+
+
+
+
+
+
+          <input
+            type="text"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
+            placeholder="Código del producto"
+          />
+
+          <input
+            type="number"
+            value={cantidad}
+            onChange={(e) =>
+              setCantidad(Number(e.target.value))
+            }
+            placeholder="Cantidad"
+          />
+          <button onClick={agregarProducto}>
+            Agregar Producto
+          </button>
+          <button onClick={ejecutarOptimizacion}>
+            Optimizar
+          </button>
+
+          <button onClick={nuevaCarga}>
+            Nueva Carga
+          </button>
+          <div style={{ marginTop: "20px" }}>
+
+
+
+
+            {productos.map((producto, index) => (
+
+              <div
+                key={index}
+                style={{
+                  padding: "8px",
+                  borderBottom: "1px solid #ddd",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}
+              >
+
+                <span>
+                  {producto.codigo}
+                  {" - "}
+                  {producto.cantidad}
+                </span>
+
+                <button
+                  onClick={() => eliminarProducto(index)}
+                >
+                  X
+                </button>
+
+              </div>
+
+            ))}
+
+
+
+          </div>
+        </div>
+      </Card>
+      {
+        resultadoReal && (
+          <Card>
+            <div
+              style={{
+                padding: "20px"
+              }}
+            >
+              <h3>Resultado Real</h3>
+
+              <p>
+                Cargadas:
+                {" "}
+                {resultadoReal.cargadas}
+              </p>
+
+              <p>
+                Rechazadas:
+                {" "}
+                {resultadoReal.rechazadas}
+              </p>
+
+              <p>
+                Total cajas:
+                {" "}
+                {resultadoReal.cajas.length}
+              </p>
+            </div>
+          </Card>
+        )
+      }
+
 
       {/* ========================= */}
       {/* TARJETAS SUPERIORES */}
@@ -54,22 +295,22 @@ function Optimizacion() {
       >
         <DashboardCard
           title="Camión"
-          value={resultado.camion}
+          value={camionReal}
         />
 
         <DashboardCard
           title="Productos"
-          value={String(resultado.productos)}
+          value={String(productosReales)}
         />
 
         <DashboardCard
           title="Cajas"
-          value={String(resultado.cajas)}
+          value={String(cajasReales)}
         />
 
         <DashboardCard
           title="Ocupación"
-          value={resultado.ocupacion}
+          value={ocupacionReal}
         />
       </div>
 
@@ -197,7 +438,7 @@ function Optimizacion() {
 
           <p>
             <strong>Camión:</strong>{" "}
-            {resultado.camion}
+            {camionReal}
           </p>
 
           <p>
