@@ -50,7 +50,7 @@ function ProductoModal({
   const [alto, setAlto] =
     useState("");
 
-  const [peso, setPeso] =
+  const [, setPeso] =
     useState("");
 
   const [apilable,

@@ -18,7 +18,7 @@ function MainLayout({ children }: MainLayoutProps) {
     : colors.light;
 
   return (
-    <div
+    <div className="app-layout"
       style={{
         display: "flex",
         minHeight: "100vh",
@@ -29,6 +29,7 @@ function MainLayout({ children }: MainLayoutProps) {
       <div
         style={{
           flex: 1,
+          minWidth: 0,
           display: "flex",
           flexDirection: "column",
           backgroundColor:
