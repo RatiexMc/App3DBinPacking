@@ -214,8 +214,16 @@ def optimizar(
     # ==============================================
 
     return {
-        "cargadas": resultado["cargadas"],
-        "rechazadas": resultado["rechazadas"],
-        "ocupacion": resultado["ocupacion"],
-        "cajas": resultado["cajas"]
+    "cargadas": resultado["cargadas"],
+    "rechazadas": resultado["rechazadas"],
+    "ocupacion": resultado["ocupacion"],
+
+    "camion": {
+        "largo": largo_camion,
+        "ancho": ancho_camion,
+        "alto": alto_camion,
+        "peso_maximo": peso_maximo
+    },
+
+    "cajas": resultado["cajas"]
     }

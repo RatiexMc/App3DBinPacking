@@ -2,7 +2,7 @@ import { useState } from "react";
 import PageHeader from "../components/PageHeader";
 import DashboardCard from "../components/DashboardCard";
 import Card from "../components/Card";
-
+import PackingPlot from "../components/PackingPlot";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
 
@@ -317,35 +317,96 @@ function Optimizacion() {
       {/* ========================= */}
       {/* VISUALIZACIÓN 3D */}
       {/* ========================= */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       <Card>
         <div
           style={{
             minHeight: "450px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
             color: currentColors.textSecondary,
           }}
         >
-          <h2
-            style={{
-              color: currentColors.textPrimary,
-              marginBottom: "15px",
-            }}
-          >
-            Visualización 3D
-          </h2>
+          {
+            resultadoReal ? (
 
-          <p>
-            El resultado de la optimización se mostrará aquí.
-          </p>
+              <PackingPlot
+                cajas={resultadoReal.cajas}
+                camion={resultadoReal.camion}
+              />
 
-          <p>
-            (Preparado para integrar Three.js)
-          </p>
+            ) : (
+
+              <div
+                style={{
+                  minHeight: "450px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <h2
+                  style={{
+                    color: currentColors.textPrimary,
+                    marginBottom: "15px",
+                  }}
+                >
+                  Visualización 3D
+                </h2>
+
+                <p>
+                  El resultado de la optimización se mostrará aquí.
+                </p>
+
+                <p>
+                  (Preparado para integrar Three.js)
+                </p>
+              </div>
+
+            )
+          }
         </div>
       </Card>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* ========================= */}
       {/* INFORMACIÓN DETALLADA */}
