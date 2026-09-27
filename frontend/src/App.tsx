@@ -1,6 +1,6 @@
 import AppRoutes from "./routes/AppRoutes";
 import { SidebarProvider } from "./context/SidebarContext";
-import { ThemeProvider } from "./theme/ThemeContext";
+import { ThemeProvider } from "./theme/ThemeProvider";
 
 function App() {
 return (

@@ -23,7 +23,7 @@ class OptimizacionTests(unittest.TestCase):
         conn = MagicMock()
         cursor = conn.cursor.return_value
         cursor.fetchall.return_value = [(100, 100, 100, 1000, "TEST", "Chofer", "Prueba")]
-        cursor.fetchone.side_effect = filas or [("A", "Caja", 10, 20, 30, 0)]
+        cursor.fetchone.side_effect = filas or [("A", "Caja", 10, 20, 30, 0, True, 1)]
         return conn, cursor
 
     def test_cantidades_invalidas(self):
@@ -41,7 +41,7 @@ class OptimizacionTests(unittest.TestCase):
                 SolicitudOptimizacion(**valores)
 
     def test_codigos_faltantes_impiden_carga_parcial(self):
-        conn, cursor = self.conexion([("A", "Caja", 10, 20, 30, 0), None, None])
+        conn, cursor = self.conexion([("A", "Caja", 10, 20, 30, 0, True, 1), None, None])
         pedido = self.solicitud([{"codigo": codigo, "cantidad": 1} for codigo in ["A", "NO1", "NO2"]])
         with patch("API.optimizacion.conectar", return_value=conn), patch("API.optimizacion.ejecutar_packing") as motor:
             with self.assertRaises(HTTPException) as error:
@@ -78,7 +78,7 @@ class OptimizacionTests(unittest.TestCase):
         conn.close.assert_called_once()
 
     def test_dimensiones_invalidas(self):
-        conn, cursor = self.conexion([("A", "Caja", 0, 20, 30, 0)])
+        conn, cursor = self.conexion([("A", "Caja", 0, 20, 30, 0, True, 1)])
         with patch("API.optimizacion.conectar", return_value=conn), patch("API.optimizacion.ejecutar_packing") as motor:
             with self.assertRaises(HTTPException) as error:
                 optimizar(self.solicitud())
@@ -133,4 +133,3 @@ class OptimizacionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

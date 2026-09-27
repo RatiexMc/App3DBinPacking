@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { esResultado, registro, type Producto, type Resultado } from "../types/Packing";
+import { obtenerPreferencias } from "./preferenciasStore";
 
 type EstadoCarga = {
   solicitudId: string;
@@ -11,7 +12,7 @@ const clave = "darnel.carga-en-curso.v1";
 const inicial: EstadoCarga = {
   solicitudId: crypto.randomUUID(),
   chofer: "", codigo: "", cantidad: "1", productos: [], resultado: null,
-  editando: null, manualVisible: true, error: "", faltantes: [], calculando: false,
+  editando: null, manualVisible: obtenerPreferencias().manualVisible, error: "", faltantes: [], calculando: false,
   aviso: "", avisoPersistencia: "",
 };
 function recuperar(): EstadoCarga {

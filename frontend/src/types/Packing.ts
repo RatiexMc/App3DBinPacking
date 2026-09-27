@@ -1,6 +1,8 @@
 export type Producto = { codigo: string; cantidad: number };
 export type Caja = { nombre: string; x: number; y: number; z: number; largo: number; ancho: number; alto: number };
 export type Resultado = {
+  motor_version?: string; estrategia?: string;
+  sin_acomodar?: { codigo: string; descripcion: string; cantidad: number; motivo: string }[];
   historial_id?: string; historial_guardado?: boolean; aviso_historial?: string;
   cargadas: number; rechazadas: number; ocupacion: number;
   camion: { largo: number; ancho: number; alto: number; placa?: string; chofer?: string };

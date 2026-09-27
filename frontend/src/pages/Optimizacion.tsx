@@ -13,6 +13,7 @@ import PackingPlot from "../components/PackingPlot";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
 import { API_URL } from "../hooks/useConsulta";
+import { guardarPreferencias } from "../context/preferenciasStore";
 import "../styles/optimizacion.css";
 
 function errorSolicitud(datos: unknown, estado: number): string {
@@ -49,7 +50,11 @@ function Optimizacion() {
   const [editando, setEditando] = useCampoCarga("editando");
   const [aviso, setAviso] = useCampoCarga("aviso");
   const codigoInput = useRef<HTMLInputElement>(null);
-  const [manualVisible, setManualVisible] = useCampoCarga("manualVisible");
+  const [manualVisible, cambiarManualVisible] = useCampoCarga("manualVisible");
+  function setManualVisible(visible: boolean) {
+    cambiarManualVisible(visible);
+    guardarPreferencias({ manualVisible: visible });
+  }
   const [avisoPersistencia] = useCampoCarga("avisoPersistencia");
   const total = productos.reduce((suma, producto) => suma + producto.cantidad, 0);
   const volumen = resultado ? resultado.camion.largo * resultado.camion.ancho * resultado.camion.alto / 1_000_000 : 0;
@@ -88,14 +93,16 @@ function Optimizacion() {
     if (enCurso.current) return;
     if (!chofer.trim()) { setError("Ingrese el nombre del chofer antes de optimizar."); return; }
     if (!productos.length) { setError("Agregue al menos un producto a la lista."); return; }
-    if (editando || codigo.trim()) { setError("Guarde el producto que está ingresando o cancele su edición antes de optimizar."); return; }
+    if (editando || codigo.trim()) { setManualVisible(true); setError("Guarde el producto que está ingresando o cancele su edición antes de optimizar."); return; }
+    const idCalculo = resultado?.historial_guardado ? crypto.randomUUID() : solicitudId;
+    setSolicitudId(idCalculo);
     setResultado(null); setError(""); setFaltantes([]); setAviso(""); enCurso.current = true; setCalculando(true);
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
       const respuesta = await fetch(API_URL + "/optimizar", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ solicitud_id: solicitudId, nombre_chofer: chofer.trim(), productos }),
+        body: JSON.stringify({ solicitud_id: idCalculo, nombre_chofer: chofer.trim(), productos }),
         signal: controller.signal,
       });
       const datos: unknown = await respuesta.json().catch(() => null);
@@ -176,7 +183,9 @@ function Optimizacion() {
             </> : <div className="opt-preview-empty"><div className="opt-preview-icon"><ViewInArOutlinedIcon /></div><h3>{calculando ? "Buscando una distribución…" : "Visualice su próxima carga"}</h3><p>{calculando ? "Estamos calculando las posiciones de las cajas. Esto puede tardar según el tamaño del pedido." : "Agregue los productos y calcule la distribución para explorar el camión en 3D."}</p><span className="opt-empty-caption">Medidas reales · Cantidades confirmadas</span></div>}
           </div>
           {resultado && <div className="opt-result-note" role="status">{resultado.rechazadas > 0 ? resultado.rechazadas + " cajas quedaron sin acomodar en esta distribución. Revise las cantidades o la capacidad del camión." : "Todas las cajas del pedido se acomodaron en esta distribución."}</div>}
-          <p className="opt-footnote">La ocupación representa espacio utilizado. Las reglas por categoría de peso y apoyo todavía están pendientes de integración.</p>
+          {resultado?.sin_acomodar && resultado.sin_acomodar.length > 0 && <section className="opt-panel"><h3>Cajas pendientes</h3><ul className="opt-product-list">{resultado.sin_acomodar.map(p => <li key={p.codigo}><div className="opt-product-code"><strong>{p.codigo} · {p.cantidad} cajas</strong><span>{p.descripcion}</span><span>{p.motivo}</span></div></li>)}</ul></section>}
+          <p className="opt-footnote">La ocupación mide volumen. El espacio libre puede estar repartido en huecos donde no cabe otra caja. La búsqueda compara varias distribuciones y no garantiza la mejor solución posible.</p>
+          {resultado && <p className="opt-footnote">{resultado.motor_version === "py3dbp-apoyo-v1" ? "Cálculo con apoyo completo, categorías de peso y apilabilidad. No representa una validación de resistencia del embalaje ni de peso real por categorías." : "Este resultado corresponde al motor anterior. Vuelva a calcular para aplicar las reglas de apoyo y apilado."}</p>}
         </section>
       </div>
     </div>

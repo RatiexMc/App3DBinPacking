@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import Plot from "react-plotly.js";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
+import { usePreferencias } from "../context/preferenciasStore";
 
 type Caja = { nombre: string; x: number; y: number; z: number; largo: number; ancho: number; alto: number };
 type Props = { cajas: Caja[]; camion: { largo: number; ancho: number; alto: number } };
@@ -16,6 +17,7 @@ function colorProducto(nombre: string) {
 function PackingPlot({ cajas, camion }: Props) {
   const { darkMode } = useThemeContext();
   const tema = darkMode ? colors.dark : colors.light;
+  const { bordes, opacidad } = usePreferencias();
   const data = useMemo(() => {
     const trazas: Record<string, unknown>[] = [];
     function dibujar(caja: Caja, contenedor = false) {
@@ -25,12 +27,13 @@ function PackingPlot({ cajas, camion }: Props) {
         type: "mesh3d", x: vertices.map(v => v[0]), y: vertices.map(v => v[1]), z: vertices.map(v => v[2]),
         i: [0,0,4,4,0,0,1,1,2,2,3,3], j: [1,2,5,6,1,5,2,6,3,7,0,4], k: [2,3,6,7,5,4,6,5,7,6,4,7],
         color: contenedor ? "#82b7d0" : colorProducto(caja.nombre),
-        opacity: contenedor ? 0.06 : 0.92, name: caja.nombre, showlegend: false,
+        opacity: contenedor ? 0.03 : opacidad, name: caja.nombre, showlegend: false,
         hoverinfo: contenedor ? "skip" : "text",
         hovertext: caja.nombre + "<br>" + l + " × " + a + " × " + h + " cm<br>Posición: (" + x + ", " + y + ", " + z + ")",
         flatshading: true,
       });
       // Una sola traza para las doce aristas de cada caja.
+      if (!contenedor && !bordes) return;
       const coordenadas = [0,1,2].map(eje => aristas.flatMap(([inicio, fin]) => [vertices[inicio][eje], vertices[fin][eje], null]));
       trazas.push({
         type: "scatter3d", mode: "lines", x: coordenadas[0], y: coordenadas[1], z: coordenadas[2],
@@ -41,7 +44,7 @@ function PackingPlot({ cajas, camion }: Props) {
     dibujar({ ...camion, nombre: "Camión", x: 0, y: 0, z: 0 }, true);
     cajas.forEach(caja => dibujar(caja));
     return trazas;
-  }, [cajas, camion, tema.textSecondary]);
+  }, [cajas, camion, tema.textSecondary, bordes, opacidad]);
   return <Plot data={data} useResizeHandler config={{ responsive: true, displaylogo: false, scrollZoom: false }}
     layout={{
       autosize: true, paper_bgcolor: tema.card, font: { color: tema.textPrimary },

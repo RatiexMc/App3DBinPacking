@@ -82,7 +82,7 @@ def optimizar(solicitud: SolicitudOptimizacion):
         faltantes = []
         for producto in solicitud.productos:
             cursor.execute(
-                """SELECT codigo, descripcion, largo, ancho, alto, peso
+                """SELECT codigo, descripcion, largo, ancho, alto, peso, apilable, categoria_peso
                    FROM productos WHERE codigo = %s""",
                 (producto.codigo,),
             )
@@ -92,11 +92,14 @@ def optimizar(solicitud: SolicitudOptimizacion):
                 continue
             if not dimensiones_validas(fila[2:5]) or not math.isfinite(float(fila[5])) or float(fila[5]) < 0:
                 raise HTTPException(422, f"El producto {producto.codigo} tiene medidas o peso inválidos. Revise su ficha en Productos.")
+            if fila[7] not in (1, 2, 3) or not isinstance(fila[6], bool):
+                raise HTTPException(422, f"Complete la categoría de peso y la opción apilable del producto {producto.codigo} antes de optimizar.")
             productos.append({
                 "codigo": fila[0], "descripcion": fila[1],
                 "largo": float(fila[2]), "ancho": float(fila[3]),
                 "alto": float(fila[4]), "peso": float(fila[5]),
                 "cantidad": producto.cantidad,
+                "apilable": fila[6], "categoria_peso": fila[7],
             })
 
         # Nunca calcular una carga parcial por códigos que no se encontraron.
@@ -132,6 +135,10 @@ def optimizar(solicitud: SolicitudOptimizacion):
         "ocupacion": resultado["ocupacion"],
         "camion": {"largo": largo, "ancho": ancho, "alto": alto, "peso_maximo": peso_maximo, "placa": placa, "chofer": chofer},
         "cajas": resultado["cajas"],
+        "sin_acomodar": resultado["sin_acomodar"],
+        "estrategia": resultado["estrategia"],
+        "motor_version": resultado["motor_version"],
+        "reglas": resultado["reglas"],
     }
     try:
         return guardar_resultado(solicitud.solicitud_id, entrada, productos, respuesta, tiempo_ms)
