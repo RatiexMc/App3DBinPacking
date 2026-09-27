@@ -1,0 +1,31 @@
+.ops-dashboard-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ops-dashboard-metrics .opt-metric { padding: 24px; }
+.ops-dashboard-metrics .opt-metric strong { font-size: 36px; }
+.ops-context { display: flex; gap: 24px; flex-wrap: wrap; margin: 24px 0; }
+.ops-context a { color: var(--opt-accent); font-size: 13px; }
+.ops-table-scroll { overflow-x: auto; position: relative; }
+.ops-table-scroll .opt-sr-only { left: 0; top: 0; }
+.ops-table { border-collapse: collapse; width: 100%; text-align: left; font-size: 13px; }
+.ops-table th { color: var(--opt-muted); font-size: 11px; font-weight: 600; padding: 14px 12px; border-bottom: 1px solid var(--opt-border); white-space: nowrap; }
+.ops-table td { padding: 18px 12px; border-bottom: 1px solid var(--opt-border); }
+.ops-table tr:last-child td { border-bottom: none; }
+.ops-table small { display: block; color: var(--opt-muted); margin-top: 5px; }
+.ops-table .opt-text-button { white-space: nowrap; }
+.ops-bar { width: 75px; height: 4px; border-radius: 4px; background: var(--opt-soft); margin-top: 8px; overflow: hidden; }
+.ops-bar span { height: 100%; display: block; background: var(--opt-accent); }
+.ops-toolbar { display: flex; justify-content: space-between; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.ops-search { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.ops-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 20px; font-size: 13px; }
+.ops-detail { margin-top: 24px; scroll-margin-top: 20px; }
+.ops-detail-meta { display: flex; gap: 24px; flex-wrap: wrap; padding: 16px 0; font-size: 13px; color: var(--opt-muted); }
+.ops-loading { padding: 45px 15px; text-align: center; color: var(--opt-muted); }
+.opt-manual-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.opt-manual-heading h3 { font-size: 13px; }
+@media(max-width: 1000px) { .ops-dashboard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media(max-width: 600px) {
+  .ops-dashboard-metrics .opt-metric { padding: 16px; }
+  .ops-dashboard-metrics .opt-metric strong { font-size: 28px; }
+  .ops-pagination { justify-content: center; flex-wrap: wrap; }
+  .ops-search, .ops-search > div { width: 100%; }
+  .opt-manual-heading { flex-wrap: wrap; }
+}

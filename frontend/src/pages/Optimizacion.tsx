@@ -1,5 +1,5 @@
 
-import { useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useRef, type CSSProperties, type FormEvent } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -7,36 +7,13 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import { esResultado, registro } from "../types/Packing";
+import { useCampoCarga, enCurso } from "../context/cargaStore";
 import PackingPlot from "../components/PackingPlot";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
+import { API_URL } from "../hooks/useConsulta";
 import "../styles/optimizacion.css";
-
-type Producto = { codigo: string; cantidad: number };
-type Caja = { nombre: string; x: number; y: number; z: number; largo: number; ancho: number; alto: number };
-type Resultado = {
-  cargadas: number; rechazadas: number; ocupacion: number;
-  camion: { largo: number; ancho: number; alto: number };
-  cajas: Caja[];
-};
-const registro = (valor: unknown): valor is Record<string, unknown> =>
-  typeof valor === "object" && valor !== null;
-const numero = (valor: unknown): valor is number =>
-  typeof valor === "number" && Number.isFinite(valor);
-
-// Antes de dibujar, comprobamos que la respuesta tenga un resultado completo.
-function esResultado(valor: unknown): valor is Resultado {
-  if (!registro(valor) || !registro(valor.camion) || !Array.isArray(valor.cajas)) return false;
-  const camion = valor.camion;
-  return numero(valor.cargadas) && Number.isInteger(valor.cargadas) && valor.cargadas >= 0
-    && numero(valor.rechazadas) && Number.isInteger(valor.rechazadas) && valor.rechazadas >= 0
-    && numero(valor.ocupacion) && valor.ocupacion >= 0 && valor.ocupacion <= 100
-    && ["largo", "ancho", "alto"].every(campo => numero(camion[campo]) && camion[campo] > 0)
-    && valor.cajas.length === valor.cargadas
-    && valor.cajas.every(caja => registro(caja) && typeof caja.nombre === "string"
-      && ["x", "y", "z"].every(campo => numero(caja[campo]) && caja[campo] >= 0)
-      && ["largo", "ancho", "alto"].every(campo => numero(caja[campo]) && caja[campo] > 0));
-}
 
 function errorSolicitud(datos: unknown, estado: number): string {
   if (registro(datos)) {
@@ -60,18 +37,20 @@ const formato = new Intl.NumberFormat("es-PY", { maximumFractionDigits: 2 });
 function Optimizacion() {
   const { darkMode } = useThemeContext();
   const paleta = darkMode ? colors.dark : colors.light;
-  const [chofer, setChofer] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [cantidad, setCantidad] = useState("1");
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [resultado, setResultado] = useState<Resultado | null>(null);
-  const [error, setError] = useState("");
-  const [faltantes, setFaltantes] = useState<string[]>([]);
-  const [calculando, setCalculando] = useState(false);
-  const [editando, setEditando] = useState<string | null>(null);
-  const [aviso, setAviso] = useState("");
+  const [chofer, setChofer] = useCampoCarga("chofer");
+  const [solicitudId, setSolicitudId] = useCampoCarga("solicitudId");
+  const [codigo, setCodigo] = useCampoCarga("codigo");
+  const [cantidad, setCantidad] = useCampoCarga("cantidad");
+  const [productos, setProductos] = useCampoCarga("productos");
+  const [resultado, setResultado] = useCampoCarga("resultado");
+  const [error, setError] = useCampoCarga("error");
+  const [faltantes, setFaltantes] = useCampoCarga("faltantes");
+  const [calculando, setCalculando] = useCampoCarga("calculando");
+  const [editando, setEditando] = useCampoCarga("editando");
+  const [aviso, setAviso] = useCampoCarga("aviso");
   const codigoInput = useRef<HTMLInputElement>(null);
-  const enCurso = useRef(false);
+  const [manualVisible, setManualVisible] = useCampoCarga("manualVisible");
+  const [avisoPersistencia] = useCampoCarga("avisoPersistencia");
   const total = productos.reduce((suma, producto) => suma + producto.cantidad, 0);
   const volumen = resultado ? resultado.camion.largo * resultado.camion.ancho * resultado.camion.alto / 1_000_000 : 0;
   const ocupado = resultado ? resultado.cajas.reduce((suma, caja) => suma + caja.largo * caja.ancho * caja.alto / 1_000_000, 0) : 0;
@@ -83,6 +62,7 @@ function Optimizacion() {
   } as CSSProperties;
 
   function invalidar() {
+    setSolicitudId(crypto.randomUUID());
     setResultado(null); setError(""); setFaltantes([]); setAviso("");
   }
   function agregar(evento: FormEvent) {
@@ -109,13 +89,13 @@ function Optimizacion() {
     if (!chofer.trim()) { setError("Ingrese el nombre del chofer antes de optimizar."); return; }
     if (!productos.length) { setError("Agregue al menos un producto a la lista."); return; }
     if (editando || codigo.trim()) { setError("Guarde el producto que está ingresando o cancele su edición antes de optimizar."); return; }
-    invalidar(); enCurso.current = true; setCalculando(true);
+    setResultado(null); setError(""); setFaltantes([]); setAviso(""); enCurso.current = true; setCalculando(true);
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
-      const respuesta = await fetch("http://127.0.0.1:8000/optimizar", {
+      const respuesta = await fetch(API_URL + "/optimizar", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre_chofer: chofer.trim(), productos }),
+        body: JSON.stringify({ solicitud_id: solicitudId, nombre_chofer: chofer.trim(), productos }),
         signal: controller.signal,
       });
       const datos: unknown = await respuesta.json().catch(() => null);
@@ -150,6 +130,8 @@ function Optimizacion() {
         <span className="opt-step-active"><b>1</b> Preparar pedido</span><span><b>2</b> Calcular distribución</span><span className={resultado ? "opt-step-active" : ""}><b>3</b> Revisar resultado</span>
       </div>
       {error && <div className="opt-alert" role="alert"><strong>No pudimos continuar</strong><p>{error}</p></div>}
+      {avisoPersistencia && <div className="opt-alert" role="status">{avisoPersistencia}</div>}
+      {resultado?.historial_guardado === false && <div className="opt-alert" role="status">{resultado.aviso_historial}</div>}
       <span className="opt-sr-only" role="status">{aviso}</span>
       <div className="opt-workspace">
         <section className="opt-panel opt-order" aria-labelledby="pedido-titulo">
@@ -158,7 +140,9 @@ function Optimizacion() {
           <input id="opt-chofer" className="opt-input" value={chofer} disabled={calculando} placeholder="Como figura en Camiones" onChange={evento => { invalidar(); setChofer(evento.target.value); }} />
           <p className="opt-help">Usaremos las medidas del camión registrado para ese chofer.</p>
           <div className="opt-divider" />
-          <form onSubmit={agregar} noValidate>
+          <div className="opt-manual-heading"><h3>Ingreso de productos</h3><button className="opt-text-button" aria-expanded={manualVisible} aria-controls="opt-manual" disabled={calculando} onClick={() => setManualVisible(!manualVisible)}>{manualVisible ? "Ocultar ingreso manual" : "Mostrar ingreso manual"}</button></div>
+          {!manualVisible && <p className="opt-help">El formulario está oculto. Su pedido se conserva. Puede volver a abrirlo para agregar o corregir productos; el OCR estará disponible más adelante.</p>}
+          <form id="opt-manual" hidden={!manualVisible} onSubmit={agregar} noValidate>
             <div className="opt-form-grid">
               <div><label className="opt-label" htmlFor="opt-codigo">Código del producto</label><input ref={codigoInput} id="opt-codigo" className="opt-input" value={codigo} disabled={calculando} placeholder="Ej.: RPN202122" autoComplete="off" onChange={evento => setCodigo(evento.target.value)} /></div>
               <div><label className="opt-label" htmlFor="opt-cantidad">Cajas</label><input id="opt-cantidad" className="opt-input" type="number" inputMode="numeric" min="1" step="1" value={cantidad} disabled={calculando} onChange={evento => setCantidad(evento.target.value)} /></div>
@@ -171,7 +155,7 @@ function Optimizacion() {
           {productos.length === 0 ? <div className="opt-list-empty"><ViewInArOutlinedIcon /><strong>Su pedido empieza aquí</strong><p>Agregue un código y su cantidad de cajas.</p></div> :
             <ul className="opt-product-list">{productos.map(producto => <li key={producto.codigo} className={faltantes.includes(producto.codigo) ? "opt-product-missing" : ""}>
               <div className="opt-product-code"><strong>{producto.codigo}</strong><span>{faltantes.includes(producto.codigo) ? "Código no encontrado" : producto.cantidad + (producto.cantidad === 1 ? " caja" : " cajas")}</span></div>
-              <div className="opt-row-actions"><button className="opt-icon-button" aria-label={"Editar " + producto.codigo} disabled={calculando} onClick={() => { setEditando(producto.codigo); setCodigo(producto.codigo); setCantidad(String(producto.cantidad)); setError(""); codigoInput.current?.focus(); }}><EditOutlinedIcon fontSize="small" /></button>
+              <div className="opt-row-actions"><button className="opt-icon-button" aria-label={"Editar " + producto.codigo} disabled={calculando} onClick={() => { setManualVisible(true); setEditando(producto.codigo); setCodigo(producto.codigo); setCantidad(String(producto.cantidad)); setError(""); requestAnimationFrame(() => codigoInput.current?.focus()); }}><EditOutlinedIcon fontSize="small" /></button>
               <button className="opt-icon-button" aria-label={"Quitar " + producto.codigo} disabled={calculando} onClick={() => { invalidar(); setProductos(productos.filter(item => item.codigo !== producto.codigo)); if (editando === producto.codigo) { setEditando(null); setCodigo(""); setCantidad("1"); } }}><DeleteOutlineIcon fontSize="small" /></button></div>
             </li>)}</ul>}
           <div className="opt-order-footer"><div><span>Cajas a distribuir</span><strong>{total}</strong></div>
@@ -199,4 +183,5 @@ function Optimizacion() {
   );
 }
 export default Optimizacion;
+
 

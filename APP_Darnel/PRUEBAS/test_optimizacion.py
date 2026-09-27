@@ -8,13 +8,21 @@ from API.optimizacion import SolicitudOptimizacion, optimizar
 
 
 class OptimizacionTests(unittest.TestCase):
+    def setUp(self):
+        consulta = patch("API.optimizacion.buscar_resultado", return_value=None)
+        guardado = patch("API.optimizacion.guardar_resultado", side_effect=lambda identificador, entrada, productos, resultado, tiempo: resultado)
+        self.consulta_historial = consulta.start()
+        self.guardado_historial = guardado.start()
+        self.addCleanup(consulta.stop)
+        self.addCleanup(guardado.stop)
+
     def solicitud(self, productos=None):
         return SolicitudOptimizacion(nombre_chofer=" Chofer ", productos=productos or [{"codigo": " A ", "cantidad": 2}])
 
     def conexion(self, filas=None):
         conn = MagicMock()
         cursor = conn.cursor.return_value
-        cursor.fetchall.return_value = [(100, 100, 100, 1000)]
+        cursor.fetchall.return_value = [(100, 100, 100, 1000, "TEST", "Chofer", "Prueba")]
         cursor.fetchone.side_effect = filas or [("A", "Caja", 10, 20, 30, 0)]
         return conn, cursor
 
@@ -94,6 +102,33 @@ class OptimizacionTests(unittest.TestCase):
         self.assertEqual(len(resultado["cajas"]), 2)
         self.assertEqual(resultado["ocupacion"], 1.2)
         self.assertEqual(cursor.execute.call_args.args[1], ("A",))
+        self.guardado_historial.assert_called_once()
+        self.assertEqual(resultado["historial_guardado"], True)
+
+    def test_reintento_devuelve_copia_sin_recalcular(self):
+        pedido = self.solicitud()
+        esperado = {"cargadas": 2, "historial_guardado": True}
+        self.consulta_historial.return_value = {"entrada": pedido.model_dump(mode="json", exclude={"solicitud_id"}), "resultado": esperado}
+        with patch("API.optimizacion.conectar") as conexion, patch("API.optimizacion.ejecutar_packing") as motor:
+            self.assertEqual(optimizar(pedido), esperado)
+            conexion.assert_not_called()
+            motor.assert_not_called()
+        self.guardado_historial.assert_not_called()
+
+    def test_id_reutilizado_con_otro_pedido(self):
+        self.consulta_historial.return_value = {"entrada": {}, "resultado": {}}
+        with self.assertRaises(HTTPException) as error:
+            optimizar(self.solicitud())
+        self.assertEqual(error.exception.status_code, 409)
+
+    def test_falla_guardado_conserva_resultado_y_avisa(self):
+        conn, _ = self.conexion()
+        self.guardado_historial.side_effect = RuntimeError("sin conexión")
+        with patch("API.optimizacion.conectar", return_value=conn), patch("API.optimizacion.logger"):
+            resultado = optimizar(self.solicitud())
+        self.assertEqual(resultado["cargadas"], 2)
+        self.assertFalse(resultado["historial_guardado"])
+        self.assertIn("no se pudo guardar", resultado["aviso_historial"])
 
 
 if __name__ == "__main__":

@@ -1,11 +1,14 @@
 import logging
 import math
+from time import perf_counter
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from database.conexion import conectar
 from services.packing_service import ejecutar_packing
+from services.historial_service import buscar_resultado, guardar_resultado
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,6 +27,7 @@ class ProductoOptimizar(BaseModel):
 
 
 class SolicitudOptimizacion(BaseModel):
+    solicitud_id: UUID = Field(default_factory=uuid4)
     nombre_chofer: str = Field(min_length=1)
     productos: list[ProductoOptimizar] = Field(min_length=1)
 
@@ -41,13 +45,24 @@ def dimensiones_validas(valores):
 
 @router.post("/optimizar")
 def optimizar(solicitud: SolicitudOptimizacion):
+    entrada = solicitud.model_dump(mode="json", exclude={"solicitud_id"})
+    try:
+        anterior = buscar_resultado(solicitud.solicitud_id)
+        if anterior:
+            if anterior["entrada"] != entrada:
+                raise HTTPException(409, "Esta solicitud corresponde a otro pedido. Inicie una nueva carga antes de continuar.")
+            return anterior["resultado"]
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("No se pudo comprobar el historial")
     conn = None
     cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute(
-            """SELECT largo, ancho, alto, peso_maximo
+            """SELECT largo, ancho, alto, peso_maximo, placa, nombre_chofer, apellido_chofer
                FROM camiones WHERE LOWER(nombre_chofer) = LOWER(%s)""",
             (solicitud.nombre_chofer,),
         )
@@ -57,7 +72,9 @@ def optimizar(solicitud: SolicitudOptimizacion):
         if len(camiones) > 1:
             raise HTTPException(409, "Hay varios camiones con ese nombre de chofer. Revise los registros en Camiones para identificar el vehículo correcto.")
 
-        largo, ancho, alto, peso_maximo = map(float, camiones[0])
+        largo, ancho, alto, peso_maximo = map(float, camiones[0][:4])
+        placa = camiones[0][4]
+        chofer = " ".join(str(parte) for parte in camiones[0][5:7] if parte)
         if not dimensiones_validas((largo, ancho, alto, peso_maximo)):
             raise HTTPException(422, "El camión tiene medidas o capacidad de peso inválidas. Corrija sus datos en Camiones.")
 
@@ -100,16 +117,27 @@ def optimizar(solicitud: SolicitudOptimizacion):
             conn.close()
 
     try:
+        inicio = perf_counter()
         resultado = ejecutar_packing(largo, ancho, alto, peso_maximo, productos)
+        tiempo_ms = round((perf_counter() - inicio) * 1000)
     except Exception:
         logger.exception("Falló el cálculo de carga")
         raise HTTPException(500, "No pudimos calcular la distribución. Sus productos siguen en la lista; vuelva a intentar.") from None
 
-    return {
+    respuesta = {
+        "historial_id": str(solicitud.solicitud_id),
+        "historial_guardado": True,
         "cargadas": resultado["cargadas"],
         "rechazadas": resultado["rechazadas"],
         "ocupacion": resultado["ocupacion"],
-        "camion": {"largo": largo, "ancho": ancho, "alto": alto, "peso_maximo": peso_maximo},
+        "camion": {"largo": largo, "ancho": ancho, "alto": alto, "peso_maximo": peso_maximo, "placa": placa, "chofer": chofer},
         "cajas": resultado["cajas"],
     }
+    try:
+        return guardar_resultado(solicitud.solicitud_id, entrada, productos, respuesta, tiempo_ms)
+    except Exception:
+        logger.exception("Se calculó la carga, pero no se pudo guardar el historial")
+        respuesta["historial_guardado"] = False
+        respuesta["aviso_historial"] = "La distribución se calculó, pero no se pudo guardar en el historial. Vuelva a pulsar Optimizar carga para reintentar el guardado."
+        return respuesta
 
