@@ -9,7 +9,11 @@ from uuid import uuid4
 from psycopg2.extras import RealDictCursor
 from database.conexion import conectar
 from services import historial_service
-from API.historial import historial, detalle, dashboard
+from functools import partial
+from API.historial import historial as listar, detalle as ver, dashboard as indicadores
+historial = partial(listar, usuario={"rol": "admin"})
+detalle = partial(ver, usuario={"rol": "admin"})
+dashboard = partial(indicadores, usuario={"rol": "admin"})
 
 
 @unittest.skipUnless(os.environ.get("DARNEL_TEST_POSTGRES") == "1", "Requiere PostgreSQL local y activación explícita")

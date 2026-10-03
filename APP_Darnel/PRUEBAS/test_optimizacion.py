@@ -4,13 +4,17 @@ import unittest
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from pydantic import ValidationError
-from API.optimizacion import SolicitudOptimizacion, optimizar
+from API.optimizacion import SolicitudOptimizacion, optimizar as optimizar_autenticado
+
+
+def optimizar(solicitud):
+    return optimizar_autenticado(solicitud, usuario={"id": "00000000-0000-0000-0000-000000000001", "rol": "operador"})
 
 
 class OptimizacionTests(unittest.TestCase):
     def setUp(self):
         consulta = patch("API.optimizacion.buscar_resultado", return_value=None)
-        guardado = patch("API.optimizacion.guardar_resultado", side_effect=lambda identificador, entrada, productos, resultado, tiempo: resultado)
+        guardado = patch("API.optimizacion.guardar_resultado", side_effect=lambda identificador, entrada, productos, resultado, tiempo, usuario_id: resultado)
         self.consulta_historial = consulta.start()
         self.guardado_historial = guardado.start()
         self.addCleanup(consulta.stop)

@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/api";
 import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import PageActions from "../components/PageActions";
@@ -44,8 +45,8 @@ function Camiones() {
   // Consulta a FastAPI
   const cargarCamiones = async () => {
     try {
-      const respuesta = await fetch(
-        "http://127.0.0.1:8000/camiones"
+      const respuesta = await apiFetch(
+        "/camiones"
       );
       const datos = await respuesta.json();
       setCamiones(datos);
@@ -201,8 +202,8 @@ function Camiones() {
 
     try {
 
-      await fetch(
-        `http://127.0.0.1:8000/camiones/${selectedCamion.id_camion}`,
+      await apiFetch(
+        `/camiones/${selectedCamion.id_camion}`,
         {
           method: "DELETE",
         }

@@ -8,8 +8,10 @@ def migrar():
     try:
         with conn:
             with conn.cursor() as cursor:
-                cursor.execute(Path(__file__).with_name("migrations").joinpath("001_historial_optimizaciones.sql").read_text(encoding="utf-8-sig"))
-        print("Tabla de historial preparada. Productos y camiones no se modificaron.")
+                # Las migraciones son idempotentes: repetirlas no borra información.
+                for archivo in sorted(Path(__file__).with_name("migrations").glob("*.sql")):
+                    cursor.execute(archivo.read_text(encoding="utf-8-sig"))
+        print("Historial y cuentas preparados. Productos y camiones no se modificaron.")
     finally:
         conn.close()
 

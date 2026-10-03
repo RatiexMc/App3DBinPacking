@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { apiFetch } from "../services/api";
+export { API_URL } from "../services/api";
 
 export function useConsulta<T>(ruta: string | null) {
   const [revision, setRevision] = useState(0);
@@ -13,7 +14,7 @@ export function useConsulta<T>(ruta: string | null) {
     let vigente = true;
     async function consultar() {
       try {
-        const res = await fetch(API_URL + ruta, { signal: controller.signal });
+        const res = await apiFetch(ruta!, { signal: controller.signal });
         const datos = await res.json();
         if (!res.ok) throw new Error(typeof datos?.detail === "string" ? datos.detail : "No pudimos cargar esta información. Vuelva a intentar.");
         if (vigente) setRespuesta({ clave, datos, error: "" });

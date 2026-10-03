@@ -1,8 +1,33 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from services.auth_service import usuario_actual
+from services.historial_service import transaccion
 from database.conexion import conectar
 from pydantic import BaseModel
 
 router = APIRouter()
+
+@router.get("/productos/frecuentes")
+def frecuentes(usuario=Depends(usuario_actual)):
+    """Frecuencia de planes propios, incluso para administradores; no despachos."""
+    try:
+        with transaccion() as cursor:
+            cursor.execute("""
+                WITH usos AS (
+                    SELECT DISTINCT o.id, o.creado_en, item->>'codigo' AS codigo
+                    FROM optimizaciones o
+                    CROSS JOIN LATERAL jsonb_array_elements(o.productos) item
+                    WHERE o.usuario_id = %s
+                )
+                SELECT p.codigo, p.descripcion, COUNT(*) AS optimizaciones
+                FROM usos JOIN productos p ON p.codigo = usos.codigo
+                GROUP BY p.codigo, p.descripcion
+                ORDER BY COUNT(*) DESC, MAX(usos.creado_en) DESC, p.codigo
+                LIMIT 20
+            """, (str(usuario["id"]),))
+            return cursor.fetchall()
+    except Exception:
+        raise HTTPException(503, "No pudimos consultar sus frecuentes. Puede usar el catálogo.") from None
+
 class ProductoCreate(BaseModel):
     codigo: str
     descripcion: str

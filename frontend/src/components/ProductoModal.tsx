@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/api";
 import {
   useState,
   useEffect,
@@ -203,15 +204,15 @@ function ProductoModal({
     try {
 
       const url = producto
-        ? `http://127.0.0.1:8000/productos/${producto.id_producto}`
-        : "http://127.0.0.1:8000/productos";
+        ? `/productos/${producto.id_producto}`
+        : "/productos";
 
       const metodo = producto
         ? "PUT"
         : "POST";
 
       const respuesta =
-        await fetch(url, {
+        await apiFetch(url, {
           method: metodo,
 
           headers: {
@@ -657,3 +658,4 @@ function ProductoModal({
 }
 
 export default ProductoModal;
+

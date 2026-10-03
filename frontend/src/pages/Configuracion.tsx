@@ -1,46 +1,62 @@
-
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, type FormEvent } from "react";
 import OperationsPage from "../components/OperationsPage";
+import { API_URL, apiJson, jsonBody } from "../services/api";
+import { cerrarSesion, guardarUsuario, useSesion, type Usuario } from "../context/authStore";
 import { guardarPreferencias, usePreferencias } from "../context/preferenciasStore";
-import { useCampoCarga } from "../context/cargaStore";
+import "../styles/cuenta.css";
 
 export default function Configuracion() {
+  const { usuario } = useSesion();
   const preferencias = usePreferencias();
-  const [manualVisible, setManualVisible] = useCampoCarga("manualVisible");
-  const [calculando] = useCampoCarga("calculando");
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
-  function guardar(cambios: Parameters<typeof guardarPreferencias>[0]) {
-    const ok = guardarPreferencias(cambios);
-    setMensaje(ok ? "Preferencias guardadas en este navegador." : "Los cambios se aplicaron, pero el navegador no permitió guardarlos para la próxima visita.");
+  async function realizar(accion: () => Promise<void>, exito: string) {
+    setOcupado(true); setError(""); setMensaje("");
+    try { await accion(); setMensaje(exito); }
+    catch (causa) { setError(causa instanceof Error ? causa.message : "No pudimos guardar los cambios."); }
+    finally { setOcupado(false); }
   }
+  function guardarNombre(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const nombre = String(new FormData(evento.currentTarget).get("nombre"));
+    void realizar(async () => guardarUsuario(await apiJson<Usuario>("/auth/perfil", { method: "PATCH", ...jsonBody({ nombre }) })), "Nombre actualizado.");
+  }
+  function cambiarPassword(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    const form = evento.currentTarget;
+    const datos = new FormData(form);
+    if (datos.get("nueva") !== datos.get("repetir")) { setError("Las contraseñas nuevas no coinciden."); return; }
+    void realizar(async () => {
+      await apiJson("/auth/password", { method: "POST", ...jsonBody({ actual: datos.get("actual"), nueva: datos.get("nueva") }) });
+      form.reset();
+    }, "Contraseña actualizada. Se cerraron las sesiones de otros dispositivos.");
+  }
+  function subirFoto(archivo?: File) {
+    if (!archivo) return;
+    if (archivo.size > 5 * 1024 * 1024) { setError("La foto debe pesar como máximo 5 MB."); return; }
+    const datos = new FormData(); datos.set("archivo", archivo);
+    void realizar(async () => guardarUsuario(await apiJson<Usuario>("/auth/foto", { method: "POST", body: datos })), "Foto de perfil actualizada.");
+  }
+  if (!usuario) return null;
   return <OperationsPage>
-    <header className="opt-header"><div><span className="opt-eyebrow">PREFERENCIAS DEL SISTEMA</span><h1>Configuración</h1><p>Personalice la interfaz y la forma de revisar sus cargas.</p></div><Link className="opt-button opt-secondary" to="/optimizacion">Ir a Optimización</Link></header>
+    <header className="opt-header"><div><span className="opt-eyebrow">SU CUENTA</span><h1>Configuración</h1><p>Administre su perfil, contraseña y apariencia.</p></div><span className="opt-badge">{usuario.rol === "admin" ? "Administrador" : "Operador"}</span></header>
+    {error && <div className="opt-alert" role="alert">{error}</div>}
     {mensaje && <p className="opt-result-note" role="status">{mensaje}</p>}
     <div className="settings-grid">
-      <section className="opt-panel"><div className="opt-panel-heading"><h2>Apariencia</h2></div>
-        <label className="opt-label" htmlFor="tema-sitio">Tema de la interfaz</label>
-        <select id="tema-sitio" className="opt-input" value={preferencias.oscuro ? "oscuro" : "claro"} onChange={e => guardar({ oscuro: e.target.value === "oscuro" })}><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select>
-        <p className="opt-help">Se aplica a todas las pantallas y se conserva al recargar.</p>
-      </section>
-      <section className="opt-panel"><div className="opt-panel-heading"><h2>Ingreso del pedido</h2></div>
-        <label className="settings-check"><input type="checkbox" checked={manualVisible} disabled={calculando} onChange={e => { setManualVisible(e.target.checked); guardar({ manualVisible: e.target.checked }); }} /> Mostrar el formulario de ingreso manual</label>
-        <p className="opt-help">Ocultarlo conserva los productos y resultados. Puede volver a abrirlo desde Optimización.</p>
-      </section>
-      <section className="opt-panel"><div className="opt-panel-heading"><h2>Visualización 3D</h2></div>
-        <label className="settings-check"><input type="checkbox" checked={preferencias.bordes} onChange={e => guardar({ bordes: e.target.checked })} /> Mostrar bordes de las cajas</label>
-        <label className="opt-label" htmlFor="opacidad-cajas">Opacidad de las cajas: {Math.round(preferencias.opacidad * 100)}%</label>
-        <input id="opacidad-cajas" className="settings-range" type="range" min="20" max="100" step="1" value={Math.round(preferencias.opacidad * 100)} onChange={e => guardar({ opacidad: Number(e.target.value) / 100 })} />
-        <p className="opt-help">Una menor opacidad ayuda a inspeccionar el interior. Solo cambia el dibujo; no modifica la ocupación calculada.</p>
-      </section>
-      <section className="opt-panel"><div className="opt-panel-heading"><h2>Reglas del cálculo</h2><span className="opt-badge">Aplicadas en el servidor</span></div>
-        <ul className="settings-rules"><li>Medidas de cajas y camiones en centímetros.</li><li>Sin superposición ni cajas fuera del camión.</li><li>Base de cada caja apoyada completamente en el piso u otras cajas.</li><li>No colocar una categoría más pesada sobre una más liviana.</li><li>No apoyar cajas sobre productos marcados como no apilables.</li></ul>
-        <p className="opt-help">Estas comprobaciones geométricas no calculan resistencia del embalaje ni peso real cuando solo hay categorías. Los resultados antiguos conservan las reglas con las que fueron generados.</p>
-      </section>
+      <section className="opt-panel"><h2>Perfil</h2><fieldset disabled={ocupado}>
+        <div className="profile-picture">{usuario.foto_revision ? <img src={API_URL + "/auth/foto?v=" + usuario.foto_revision} alt="Foto de perfil" /> : <span>{usuario.nombre.slice(0, 1).toUpperCase()}</span>}<div><label className="opt-label">Cambiar foto<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { subirFoto(e.target.files?.[0]); e.target.value = ""; }} /></label><p className="opt-help">JPG, PNG o WebP · Máximo 5 MB</p>{usuario.foto_revision && <button className="opt-button opt-secondary" onClick={() => void realizar(async () => guardarUsuario(await apiJson<Usuario>("/auth/foto", { method: "DELETE" })), "Foto eliminada.")}>Quitar foto</button>}</div></div>
+        <form onSubmit={guardarNombre}><label className="opt-label">Nombre completo<input className="opt-input" name="nombre" defaultValue={usuario.nombre} required minLength={2} maxLength={100} /></label><label className="opt-label">Correo de acceso<input className="opt-input" value={usuario.email} readOnly /></label><p className="opt-help">El correo identifica su cuenta.</p><button className="opt-button opt-primary">Guardar perfil</button></form>
+      </fieldset></section>
+      <section className="opt-panel"><h2>Seguridad</h2><p className="opt-help">Para cambiar su contraseña necesitamos comprobar la actual.</p><form onSubmit={cambiarPassword}><fieldset disabled={ocupado}>
+        <label className="opt-label">Contraseña actual<input className="opt-input" type="password" name="actual" required autoComplete="current-password" maxLength={128} /></label>
+        <label className="opt-label">Nueva contraseña<input className="opt-input" type="password" name="nueva" required minLength={10} maxLength={128} autoComplete="new-password" /></label>
+        <label className="opt-label">Repetir nueva contraseña<input className="opt-input" type="password" name="repetir" required minLength={10} maxLength={128} autoComplete="new-password" /></label>
+        <p className="opt-help">Entre 10 y 128 caracteres. Se cerrarán las otras sesiones.</p><button className="opt-button opt-primary">Cambiar contraseña</button>
+      </fieldset></form></section>
+      <section className="opt-panel"><h2>Apariencia</h2><label className="opt-label">Tema de la interfaz<select className="opt-input" value={preferencias.oscuro ? "oscuro" : "claro"} onChange={e => { const ok = guardarPreferencias({ oscuro: e.target.value === "oscuro" }); setMensaje(ok ? "Apariencia guardada en este navegador." : "Apariencia aplicada; no se pudo guardar en este navegador."); }}><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select></label></section>
+      <section className="opt-panel"><h2>Sesión</h2><p className="opt-help">Sus optimizaciones guardadas permanecen en PostgreSQL. El borrador de carga se conserva para su cuenta en esta pestaña.</p><button className="opt-button opt-secondary" disabled={ocupado} onClick={() => void realizar(cerrarSesion, "")}>Cerrar sesión</button></section>
     </div>
-    <section className="opt-panel settings-next"><div className="opt-panel-heading"><h2>Próximas integraciones</h2></div>
-      <p className="opt-help">Lectura OCR del picking, inicio de sesión, registro y perfil de usuario todavía no están habilitados. Primero definiremos sus datos, permisos y pruebas.</p>
-      <p className="opt-help">El historial se guarda en PostgreSQL. Las preferencias de esta pantalla son locales a este navegador.</p>
-    </section>
   </OperationsPage>;
 }
+

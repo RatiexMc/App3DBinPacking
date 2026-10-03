@@ -7,6 +7,8 @@ import {
 
 interface SidebarContextType {
   collapsed: boolean;
+  mobileOpen: boolean;
+  closeMobile: () => void;
   toggleSidebar: () => void;
 }
 
@@ -21,14 +23,17 @@ export function SidebarProvider({
   const [collapsed, setCollapsed] =
     useState(false);
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = () => setMobileOpen(false);
   const toggleSidebar = () => {
+    if (window.matchMedia("(max-width: 700px)").matches) { setMobileOpen(v => !v); return; }
     setCollapsed((prev) => !prev);
   };
 
   return (
     <SidebarContext.Provider
       value={{
-        collapsed,
+        collapsed, mobileOpen, closeMobile,
         toggleSidebar,
       }}
     >

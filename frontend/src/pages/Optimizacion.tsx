@@ -3,7 +3,10 @@ import { useRef, type CSSProperties, type FormEvent } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import SeleccionProductos, { type Articulo } from "../components/SeleccionProductos";
+import { useConsulta } from "../hooks/useConsulta";
+import type { Producto } from "../types/Packing";
+import "../styles/flow.css";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -12,7 +15,8 @@ import { useCampoCarga, enCurso } from "../context/cargaStore";
 import PackingPlot from "../components/PackingPlot";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
-import { API_URL } from "../hooks/useConsulta";
+import { apiFetch } from "../services/api";
+import { Link } from "react-router-dom";
 import { guardarPreferencias } from "../context/preferenciasStore";
 import "../styles/optimizacion.css";
 
@@ -50,10 +54,32 @@ function Optimizacion() {
   const [editando, setEditando] = useCampoCarga("editando");
   const [aviso, setAviso] = useCampoCarga("aviso");
   const codigoInput = useRef<HTMLInputElement>(null);
-  const [manualVisible, cambiarManualVisible] = useCampoCarga("manualVisible");
+  const [, cambiarManualVisible] = useCampoCarga("manualVisible");
   function setManualVisible(visible: boolean) {
     cambiarManualVisible(visible);
     guardarPreferencias({ manualVisible: visible });
+  }
+  const [etapa, setEtapa] = useCampoCarga("etapa");
+  const [metodo, setMetodo] = useCampoCarga("metodo");
+  const [seleccion, setSeleccion] = useCampoCarga("seleccion");
+  const [, setBusqueda] = useCampoCarga("busqueda");
+  const catalogo = useConsulta<Articulo[]>("/productos");
+  const camiones = useConsulta<{ id_camion: number; placa: string; nombre_chofer: string; apellido_chofer: string }[]>("/camiones");
+  function sumar(nuevos: Producto[]) {
+    if (enCurso.current) return;
+    const cantidades = new Map(productos.map(p => [p.codigo, p.cantidad]));
+    for (const p of nuevos) {
+      const n = (cantidades.get(p.codigo) || 0) + p.cantidad;
+      if (!Number.isSafeInteger(n) || n <= 0) { setError("La cantidad total no es válida."); return; }
+      cantidades.set(p.codigo, n);
+    }
+    invalidar();
+    setProductos([...cantidades].map(([codigo, cantidad]) => ({ codigo, cantidad })));
+    setSeleccion({});
+    setAviso("Se agregaron " + nuevos.reduce((s,p) => s + p.cantidad, 0) + " cajas al pedido. Los códigos repetidos se sumaron.");
+  }
+  function elegirMetodo(valor: string) {
+    setMetodo(valor); setManualVisible(valor === "manual");
   }
   const [avisoPersistencia] = useCampoCarga("avisoPersistencia");
   const total = productos.reduce((suma, producto) => suma + producto.cantidad, 0);
@@ -79,28 +105,29 @@ function Optimizacion() {
     if (!Number.isSafeInteger(cajas) || cajas <= 0) {
       setError("La cantidad debe ser un número entero mayor que cero. Por ejemplo: 1, 2 o 12 cajas."); return;
     }
-    if (productos.some(producto => producto.codigo === limpio && producto.codigo !== editando)) {
-      setError("Ese código ya está en la lista. Use el botón Editar de su fila para cambiar la cantidad."); return;
-    }
-    invalidar();
-    setProductos(editando
-      ? productos.map(producto => producto.codigo === editando ? { codigo: limpio, cantidad: cajas } : producto)
-      : [...productos, { codigo: limpio, cantidad: cajas }]);
-    setAviso(editando ? "Producto actualizado." : "Producto agregado al pedido.");
+    const producto = catalogo.datos?.find(p => p.codigo.toUpperCase() === limpio.toUpperCase());
+    if (!producto) { setError(catalogo.error || "El código no está en el catálogo. Busque un producto registrado."); return; }
+    if (editando) {
+      if (producto.codigo !== editando && productos.some(p => p.codigo === producto.codigo)) { setError("Ese producto ya está en el pedido. Edite su cantidad directamente."); return; }
+      invalidar();
+      setProductos(productos.map(p => p.codigo === editando ? { codigo: producto.codigo, cantidad: cajas } : p));
+      setAviso("Cantidad actualizada: " + cajas + " cajas.");
+    } else sumar([{ codigo: producto.codigo, cantidad: cajas }]);
     setEditando(null); setCodigo(""); setCantidad("1"); codigoInput.current?.focus();
   }
   async function optimizar() {
     if (enCurso.current) return;
     if (!chofer.trim()) { setError("Ingrese el nombre del chofer antes de optimizar."); return; }
     if (!productos.length) { setError("Agregue al menos un producto a la lista."); return; }
-    if (editando || codigo.trim()) { setManualVisible(true); setError("Guarde el producto que está ingresando o cancele su edición antes de optimizar."); return; }
+    if (editando || codigo.trim() || Object.keys(seleccion).length) { setEtapa(1); elegirMetodo(editando || codigo.trim() ? "manual" : "catalogo"); setError("Guarde el producto que está ingresando o cancele su edición antes de optimizar."); return; }
     const idCalculo = resultado?.historial_guardado ? crypto.randomUUID() : solicitudId;
     setSolicitudId(idCalculo);
     setResultado(null); setError(""); setFaltantes([]); setAviso(""); enCurso.current = true; setCalculando(true);
+    enCurso.id = idCalculo;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
-      const respuesta = await fetch(API_URL + "/optimizar", {
+      const respuesta = await apiFetch("/optimizar", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ solicitud_id: idCalculo, nombre_chofer: chofer.trim(), productos }),
         signal: controller.signal,
@@ -115,16 +142,19 @@ function Optimizacion() {
       if (!esResultado(datos) || datos.cargadas + datos.rechazadas !== total) {
         setError("El servicio devolvió un resultado incompleto. No se mostrará una carga que pueda ser incorrecta. Vuelva a intentar."); return;
       }
-      setResultado(datos); setAviso("Cálculo terminado. El resultado está disponible en la visualización.");
+      setResultado(datos); setEtapa(3); setAviso("Cálculo terminado. El resultado está disponible en la visualización.");
     } catch (causa) {
       setError(causa instanceof Error && causa.name === "AbortError"
         ? "El cálculo está tardando demasiado. Su lista se conservó; espere unos momentos antes de volver a intentar."
         : "No pudimos conectar con el servicio de optimización. Compruebe que la API esté iniciada y vuelva a intentar. Su lista se conservó.");
     } finally {
-      window.clearTimeout(timeout); enCurso.current = false; setCalculando(false);
+      window.clearTimeout(timeout);
+      if (enCurso.id === idCalculo) { enCurso.current = false; enCurso.id = null; setCalculando(false); }
     }
   }
   function nuevaCarga() {
+    if (enCurso.current || ((productos.length || codigo || chofer || Object.keys(seleccion).length) && !window.confirm("¿Descartar el pedido actual y empezar una nueva carga?"))) return;
+    setEtapa(1); setMetodo(""); setSeleccion({}); setBusqueda("");
     invalidar(); setProductos([]); setCodigo(""); setCantidad("1"); setChofer(""); setEditando(null);
   }
   return (
@@ -133,23 +163,22 @@ function Optimizacion() {
         <div><span className="opt-eyebrow">PLANIFICACIÓN DE DESPACHOS</span><h1>Optimización de carga</h1><p>Prepare su pedido y explore cómo distribuir las cajas en el camión.</p></div>
         <button className="opt-button opt-secondary" disabled={calculando} onClick={nuevaCarga}><RestartAltIcon fontSize="small" /> Nueva carga</button>
       </header>
-      <div className="opt-steps" aria-label="Etapas de planificación">
-        <span className="opt-step-active"><b>1</b> Preparar pedido</span><span><b>2</b> Calcular distribución</span><span className={resultado ? "opt-step-active" : ""}><b>3</b> Revisar resultado</span>
-      </div>
+      <nav className="flow-steps" aria-label="Etapas de planificación">{["Agregar productos", "Revisar pedido", "Ver resultado"].map((titulo, i) => <button key={titulo} aria-current={etapa === i + 1 ? "step" : undefined} disabled={calculando || (i === 1 && !productos.length) || (i === 2 && !resultado)} onClick={() => setEtapa(i + 1)}><b>{i + 1}</b><span>{titulo}</span></button>)}</nav>
       {error && <div className="opt-alert" role="alert"><strong>No pudimos continuar</strong><p>{error}</p></div>}
       {avisoPersistencia && <div className="opt-alert" role="status">{avisoPersistencia}</div>}
       {resultado?.historial_guardado === false && <div className="opt-alert" role="status">{resultado.aviso_historial}</div>}
-      <span className="opt-sr-only" role="status">{aviso}</span>
-      <div className="opt-workspace">
-        <section className="opt-panel opt-order" aria-labelledby="pedido-titulo">
-          <div className="opt-panel-heading"><div><span className="opt-eyebrow">INGRESO MANUAL</span><h2 id="pedido-titulo">Prepare el pedido</h2></div><LocalShippingOutlinedIcon className="opt-section-icon" /></div>
-          <label className="opt-label" htmlFor="opt-chofer">Nombre del chofer</label>
-          <input id="opt-chofer" className="opt-input" value={chofer} disabled={calculando} placeholder="Como figura en Camiones" onChange={evento => { invalidar(); setChofer(evento.target.value); }} />
-          <p className="opt-help">Usaremos las medidas del camión registrado para ese chofer.</p>
-          <div className="opt-divider" />
-          <div className="opt-manual-heading"><h3>Ingreso de productos</h3><button className="opt-text-button" aria-expanded={manualVisible} aria-controls="opt-manual" disabled={calculando} onClick={() => setManualVisible(!manualVisible)}>{manualVisible ? "Ocultar ingreso manual" : "Mostrar ingreso manual"}</button></div>
-          {!manualVisible && <p className="opt-help">El formulario está oculto. Su pedido se conserva. Puede volver a abrirlo para agregar o corregir productos; el OCR estará disponible más adelante.</p>}
-          <form id="opt-manual" hidden={!manualVisible} onSubmit={agregar} noValidate>
+      {aviso && <p className="flow-notice" role="status">{aviso}</p>}
+      {etapa === 1 && <section className="opt-panel">
+        <div className="opt-panel-heading"><div><span className="opt-eyebrow">SU PRÓXIMA CARGA</span><h2>¿Cómo quiere agregar productos?</h2></div><span className="opt-badge">{total} cajas en el pedido</span></div>
+        <div className="method-grid">{[
+          ["catalogo", "Catálogo", "Busque y seleccione productos", "▦"],
+          ["frecuentes", "Mis frecuentes", "Vuelva a usar sus habituales", "☆"],
+          ["manual", "Ingreso manual", "Ingrese un código y las cajas", "+"],
+          ["foto", "Fotopicking", "Prepare el pedido desde una foto", "▧"],
+        ].map(([valor, titulo, detalle, icono]) => valor === "foto" ? <Link key={valor} className="method-card" to="/fotopicking" aria-disabled={calculando} onClick={e => { if (calculando) e.preventDefault(); }}><span className="method-icon">{icono}</span><strong>{titulo}</strong><small>{detalle}</small></Link> : <button key={valor} className="method-card" aria-pressed={metodo === valor} disabled={calculando} onClick={() => elegirMetodo(valor)}><span className="method-icon">{icono}</span><strong>{titulo}</strong><small>{detalle}</small></button>)}</div>
+        {(metodo === "catalogo" || metodo === "frecuentes") && <SeleccionProductos key={metodo} frecuentes={metodo === "frecuentes"} bloqueado={calculando} agregar={sumar} />}
+        {metodo === "manual" && <section className="method-content"><h2>{editando ? "Editar producto" : "Ingreso manual"}</h2>
+          <form id="opt-manual" onSubmit={agregar} noValidate>
             <div className="opt-form-grid">
               <div><label className="opt-label" htmlFor="opt-codigo">Código del producto</label><input ref={codigoInput} id="opt-codigo" className="opt-input" value={codigo} disabled={calculando} placeholder="Ej.: RPN202122" autoComplete="off" onChange={evento => setCodigo(evento.target.value)} /></div>
               <div><label className="opt-label" htmlFor="opt-cantidad">Cajas</label><input id="opt-cantidad" className="opt-input" type="number" inputMode="numeric" min="1" step="1" value={cantidad} disabled={calculando} onChange={evento => setCantidad(evento.target.value)} /></div>
@@ -158,18 +187,27 @@ function Optimizacion() {
             <div className="opt-form-actions"><button className="opt-button opt-secondary" disabled={calculando} type="submit"><AddIcon fontSize="small" />{editando ? "Guardar cambios" : "Agregar al pedido"}</button>
               {(editando || codigo) && <button className="opt-text-button" type="button" disabled={calculando} onClick={() => { setEditando(null); setCodigo(""); setCantidad("1"); setError(""); }}>Cancelar</button>}</div>
           </form>
+          {catalogo.error && <p role="alert" className="opt-help">{catalogo.error} <button className="opt-text-button" onClick={catalogo.recargar}>Reintentar catálogo</button></p>}
+          </section>}
+          <div className="flow-actions"><span>{productos.length} productos · {total} cajas</span><button className="opt-button opt-primary" disabled={calculando || !productos.length} onClick={() => setEtapa(2)}>Revisar pedido <ArrowForwardIcon fontSize="small" /></button></div>
+        </section>}
+        {etapa === 2 && <section className="opt-panel">
+          <div className="opt-panel-heading"><div><span className="opt-eyebrow">ANTES DE CALCULAR</span><h2>Revise su pedido</h2></div><button className="opt-button opt-secondary" disabled={calculando} onClick={() => setEtapa(1)}>Agregar productos</button></div>
+          <label className="opt-label" htmlFor="opt-chofer">Camión y chofer</label>
+          <select className="opt-input" id="opt-chofer" value={chofer} disabled={calculando} onChange={e => { invalidar(); setChofer(e.target.value); }}><option value="">Seleccione un camión</option>{chofer && !camiones.datos?.some(c => c.nombre_chofer === chofer) && <option value={chofer}>{chofer} · guardado</option>}{camiones.datos?.map(c => <option key={c.id_camion} value={c.nombre_chofer}>{c.placa} · {c.nombre_chofer} {c.apellido_chofer}</option>)}</select>
+          {camiones.error && <p role="alert">{camiones.error} <button className="opt-text-button" onClick={camiones.recargar}>Reintentar</button></p>}
           <div className="opt-list-heading"><h3>Productos del pedido</h3><span>{productos.length} códigos · {total} cajas</span></div>
           {productos.length === 0 ? <div className="opt-list-empty"><ViewInArOutlinedIcon /><strong>Su pedido empieza aquí</strong><p>Agregue un código y su cantidad de cajas.</p></div> :
             <ul className="opt-product-list">{productos.map(producto => <li key={producto.codigo} className={faltantes.includes(producto.codigo) ? "opt-product-missing" : ""}>
-              <div className="opt-product-code"><strong>{producto.codigo}</strong><span>{faltantes.includes(producto.codigo) ? "Código no encontrado" : producto.cantidad + (producto.cantidad === 1 ? " caja" : " cajas")}</span></div>
-              <div className="opt-row-actions"><button className="opt-icon-button" aria-label={"Editar " + producto.codigo} disabled={calculando} onClick={() => { setManualVisible(true); setEditando(producto.codigo); setCodigo(producto.codigo); setCantidad(String(producto.cantidad)); setError(""); requestAnimationFrame(() => codigoInput.current?.focus()); }}><EditOutlinedIcon fontSize="small" /></button>
+              <div className="opt-product-code"><strong>{producto.codigo}</strong><span>{catalogo.datos?.find(p => p.codigo === producto.codigo)?.descripcion}</span><span>{faltantes.includes(producto.codigo) ? "Código no encontrado" : producto.cantidad + (producto.cantidad === 1 ? " caja" : " cajas")}</span></div>
+              <div className="opt-row-actions"><button className="opt-icon-button" aria-label={"Editar " + producto.codigo} disabled={calculando} onClick={() => { setEtapa(1); elegirMetodo("manual"); setEditando(producto.codigo); setCodigo(producto.codigo); setCantidad(String(producto.cantidad)); setError(""); requestAnimationFrame(() => codigoInput.current?.focus()); }}><EditOutlinedIcon fontSize="small" /></button>
               <button className="opt-icon-button" aria-label={"Quitar " + producto.codigo} disabled={calculando} onClick={() => { invalidar(); setProductos(productos.filter(item => item.codigo !== producto.codigo)); if (editando === producto.codigo) { setEditando(null); setCodigo(""); setCantidad("1"); } }}><DeleteOutlineIcon fontSize="small" /></button></div>
             </li>)}</ul>}
           <div className="opt-order-footer"><div><span>Cajas a distribuir</span><strong>{total}</strong></div>
             <button className="opt-button opt-primary" disabled={calculando || !productos.length} onClick={optimizar}>{calculando ? <><span className="opt-spinner" /> Calculando…</> : <>Optimizar carga <ArrowForwardIcon fontSize="small" /></>}</button>
           </div>
-        </section>
-        <section className="opt-results" aria-label="Resultado de la optimización">
+        </section>}
+        {etapa === 3 && resultado && <section className="opt-results" aria-label="Resultado de la optimización">
           <div className="opt-metrics">
             <div className="opt-metric"><span>Ocupación del espacio</span><strong>{resultado ? formato.format(resultado.ocupacion) + "%" : "—"}</strong><small>Volumen utilizado</small></div>
             <div className="opt-metric"><span>Cajas acomodadas</span><strong>{resultado ? resultado.cargadas : "—"}</strong><small>{resultado ? "de " + total + " solicitadas" : "Pendiente de cálculo"}</small></div>
@@ -184,10 +222,10 @@ function Optimizacion() {
           </div>
           {resultado && <div className="opt-result-note" role="status">{resultado.rechazadas > 0 ? resultado.rechazadas + " cajas quedaron sin acomodar en esta distribución. Revise las cantidades o la capacidad del camión." : "Todas las cajas del pedido se acomodaron en esta distribución."}</div>}
           {resultado?.sin_acomodar && resultado.sin_acomodar.length > 0 && <section className="opt-panel"><h3>Cajas pendientes</h3><ul className="opt-product-list">{resultado.sin_acomodar.map(p => <li key={p.codigo}><div className="opt-product-code"><strong>{p.codigo} · {p.cantidad} cajas</strong><span>{p.descripcion}</span><span>{p.motivo}</span></div></li>)}</ul></section>}
-          <p className="opt-footnote">La ocupación mide volumen. El espacio libre puede estar repartido en huecos donde no cabe otra caja. La búsqueda compara varias distribuciones y no garantiza la mejor solución posible.</p>
+          <details className="opt-panel flow-details"><summary>Cómo interpretar el resultado</summary><p className="opt-footnote">La ocupación mide volumen. El espacio libre puede estar repartido en huecos donde no cabe otra caja. La búsqueda compara varias distribuciones y no garantiza la mejor solución posible.</p>
           {resultado && <p className="opt-footnote">{resultado.motor_version === "py3dbp-apoyo-v1" ? "Cálculo con apoyo completo, categorías de peso y apilabilidad. No representa una validación de resistencia del embalaje ni de peso real por categorías." : "Este resultado corresponde al motor anterior. Vuelva a calcular para aplicar las reglas de apoyo y apilado."}</p>}
-        </section>
-      </div>
+          </details>
+        </section>}
     </div>
   );
 }

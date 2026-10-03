@@ -8,7 +8,9 @@ import {
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import { Link } from "react-router-dom";
+import { useSesion } from "../context/authStore";
+import { API_URL } from "../services/api";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 
@@ -17,6 +19,7 @@ import { useSidebar } from "../context/SidebarContext";
 import { useThemeContext } from "../theme/ThemeContext";
 
 function TopBar() {
+  const { usuario } = useSesion();
   const { toggleSidebar } = useSidebar();
 
   const {
@@ -41,6 +44,7 @@ function TopBar() {
       <Toolbar>
         <IconButton
           edge="start"
+          aria-label="Mostrar u ocultar menú"
           onClick={toggleSidebar}
           sx={{
             mr: 2,
@@ -64,6 +68,7 @@ function TopBar() {
 
         <IconButton
           onClick={toggleTheme}
+          aria-label="Cambiar tema"
           sx={{
             color: currentColors.textSecondary,
           }}
@@ -75,15 +80,10 @@ function TopBar() {
           )}
         </IconButton>
 
-        <IconButton
-          sx={{
-            color: currentColors.textSecondary,
-          }}
-        >
-          <NotificationsNoneIcon />
-        </IconButton>
-
         <Box
+          component={Link}
+          to="/configuracion"
+          aria-label="Abrir mi perfil"
           sx={{
             display: "flex",
             alignItems: "center",
@@ -98,10 +98,11 @@ function TopBar() {
               fontWeight: 500,
             }}
           >
-            Junior
+            {usuario?.nombre}
           </Typography>
 
           <Avatar
+            src={usuario?.foto_revision ? API_URL + "/auth/foto?v=" + usuario.foto_revision : undefined}
             sx={{
               bgcolor: currentColors.primary,
               color: "#ffffff",
@@ -110,7 +111,7 @@ function TopBar() {
               fontWeight: 700,
             }}
           >
-            J
+            {usuario?.nombre.slice(0, 1).toUpperCase()}
           </Avatar>
         </Box>
       </Toolbar>

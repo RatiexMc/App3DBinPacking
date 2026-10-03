@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import Plot from "react-plotly.js";
 import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
-import { usePreferencias } from "../context/preferenciasStore";
+import { usePreferencias, guardarPreferencias } from "../context/preferenciasStore";
 
 type Caja = { nombre: string; x: number; y: number; z: number; largo: number; ancho: number; alto: number };
 type Props = { cajas: Caja[]; camion: { largo: number; ancho: number; alto: number } };
@@ -45,7 +45,7 @@ function PackingPlot({ cajas, camion }: Props) {
     cajas.forEach(caja => dibujar(caja));
     return trazas;
   }, [cajas, camion, tema.textSecondary, bordes, opacidad]);
-  return <Plot data={data} useResizeHandler config={{ responsive: true, displaylogo: false, scrollZoom: false }}
+  return <><details className="plot-options"><summary>Opciones de visualización</summary><label className="settings-check"><input type="checkbox" checked={bordes} onChange={e => guardarPreferencias({ bordes: e.target.checked })} /> Mostrar bordes</label><label className="opt-label">Opacidad: {Math.round(opacidad * 100)}%<input className="settings-range" type="range" min="20" max="100" value={Math.round(opacidad * 100)} onChange={e => guardarPreferencias({ opacidad: Number(e.target.value) / 100 })} /></label></details><Plot data={data} useResizeHandler config={{ responsive: true, displaylogo: false, scrollZoom: false }}
     layout={{
       autosize: true, paper_bgcolor: tema.card, font: { color: tema.textPrimary },
       uirevision: "vista-carga",
@@ -58,7 +58,7 @@ function PackingPlot({ cajas, camion }: Props) {
       },
       margin: { l: 0, r: 0, b: 0, t: 10 },
     }}
-    style={{ width: "100%", height: "460px" }} />;
+    style={{ width: "100%", height: "460px" }} /></>;
 }
 export default PackingPlot;
 

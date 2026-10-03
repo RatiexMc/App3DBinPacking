@@ -73,11 +73,8 @@
 @keyframes opt-spin { to { transform: rotate(360deg); } }
 @media (max-width: 1150px) { .opt-workspace { grid-template-columns: 1fr; } .opt-order { max-width: none; } }
 @media (max-width: 600px) {
-  .app-layout:has(.opt-page) > aside { width: 60px !important; padding: 14px 8px !important; flex-shrink: 0; }
-  .app-layout:has(.opt-page) > aside > div:first-child { display: none; }
-  .app-layout:has(.opt-page) > aside a { font-size: 0; gap: 0 !important; padding: 12px 8px !important; justify-content: center !important; }
-  .app-layout:has(.opt-page) > div > main { padding: 14px; }
-  .app-layout:has(.opt-page) .MuiTypography-h6 { display: none; }
+  .app-layout > div > main { padding: 14px !important; }
+  .app-layout .MuiTypography-h6 { display: none; }
   .opt-header { align-items: flex-start; flex-direction: column; gap: 15px; }
   .opt-steps { gap: 12px; flex-wrap: wrap; }
   .opt-steps span { font-size: 10px; }
@@ -89,3 +86,4 @@
   .opt-panel-heading { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { .opt-spinner { animation: none; } }
+

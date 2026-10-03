@@ -1,0 +1,76 @@
+/* Shared progressive preparation flow. Viewer styling stays in optimizacion.css. */
+.flow-steps { display:flex; gap:12px; margin:0 0 28px; padding:8px 0 22px; border-bottom:1px solid var(--opt-border); }
+.flow-steps button { display:flex; align-items:center; gap:10px; border:0; background:transparent; color:var(--opt-muted); min-height:44px; text-align:left; padding:6px 14px; border-radius:12px; font:inherit; font-size:14px; }
+.flow-steps b { display:grid; place-items:center; border:1px solid var(--opt-border); border-radius:50%; width:30px; height:30px; flex-shrink:0; }
+.flow-steps [aria-current] { color:var(--opt-accent); background:var(--opt-tint); font-weight:650; }
+.flow-steps [aria-current] b { background:var(--opt-accent); color:var(--opt-card); border-color:transparent; }
+.flow-steps button:disabled { opacity:.55; cursor:default; }
+.method-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.method-card { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:22px; border:1px solid var(--opt-border); border-radius:14px; text-decoration:none; color:var(--opt-text); background:var(--opt-card); text-align:left; font:inherit; cursor:pointer; }
+.method-card:hover, .method-card[aria-pressed=true] { border-color:var(--opt-accent); background:var(--opt-tint); }
+.method-card small { color:var(--opt-muted); line-height:1.5; font-size:13px; }
+.method-icon { display:grid; place-items:center; height:44px; width:44px; border-radius:12px; background:var(--opt-tint); color:var(--opt-accent); font-size:26px; }
+.method-content { margin-top:28px; border-top:1px solid var(--opt-border); padding-top:28px; }
+.method-content h2 { margin-bottom:16px; }
+.flow-actions { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:24px; padding-top:20px; border-top:1px solid var(--opt-border); font-size:14px; }
+.flow-actions > span { color:var(--opt-muted); overflow-wrap:anywhere; }
+.flow-actions .opt-primary { width:auto; }
+.flow-notice { color:var(--opt-accent); background:var(--opt-tint); padding:14px 18px; border-radius:12px; margin-bottom:20px; font-size:14px; }
+.selection-table { border-collapse:collapse; width:100%; text-align:left; margin:20px 0; }
+.selection-table th { color:var(--opt-muted); font-size:12px; font-weight:500; padding:12px; border-bottom:1px solid var(--opt-border); }
+.selection-table td { padding:14px 12px; border-bottom:1px solid var(--opt-border); }
+.selection-table td:first-child { width:56px; }
+.selection-table td:last-child { width:140px; }
+.selection-table td span, .selection-table td small { display:block; color:var(--opt-muted); font-size:13px; margin-top:5px; }
+.selection-table .selected { background:var(--opt-tint); }
+.selection-table input[type=checkbox], .flow-check input { width:22px; height:22px; flex-shrink:0; accent-color:var(--opt-accent); }
+.selection-table td:first-child { height:44px; }
+.mobile-label, .mobile-document { display:none; }
+.flow-empty { padding:40px 16px; text-align:center; color:var(--opt-muted); }
+.flow-empty p { margin:12px 0 20px; }
+.flow-details { margin:18px 0; line-height:1.6; font-size:13px; overflow-wrap:anywhere; }
+.flow-details summary { color:var(--opt-accent); cursor:pointer; min-height:44px; display:list-item; padding:10px 0; }
+.flow-details p { margin:10px 0; }
+.flow-check { display:flex; align-items:center; gap:10px; min-height:44px; font-size:14px; line-height:1.5; }
+.flow-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:18px 0; }
+.flow-filters [aria-pressed=true] { border-color:var(--opt-accent); background:var(--opt-tint); color:var(--opt-accent); }
+.photo-drop { display:flex; flex-direction:column; align-items:center; gap:18px; padding:32px 20px; background:var(--opt-soft); border:1px dashed var(--opt-border); border-radius:14px; margin:24px 0; text-align:center; }
+.photo-drop label { display:grid; gap:12px; max-width:100%; }
+.photo-drop input { max-width:100%; min-height:44px; }
+.photo-drop small { color:var(--opt-muted); }
+.photo-preview { display:block; width:auto; max-width:100%; max-height:480px; object-fit:contain; margin:16px auto; border-radius:8px; }
+.review-cards { display:grid; gap:16px; margin-bottom:20px; }
+.review-card { border:1px solid var(--opt-border); border-radius:12px; padding:18px; }
+.review-card.reviewed { border-left:4px solid var(--opt-accent); }
+.review-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.review-fields { display:grid; grid-template-columns:minmax(0,1fr) 100px; gap:16px; }
+.review-fields input { margin-top:8px; }
+.opt-page :is(button,a,input,select,summary):focus-visible { outline:3px solid var(--opt-accent); outline-offset:3px; }
+.opt-page :is(button,.opt-icon-button) { min-height:44px; }
+.opt-page .opt-icon-button { min-width:44px; }
+.opt-page fieldset { border:0; min-width:0; padding:0; }
+.opt-page input, .opt-page select { font-size:16px; }
+@media(max-width:1100px) { .method-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) {
+  .flow-steps { gap:4px; justify-content:space-between; margin-bottom:20px; }
+  .flow-steps button { flex:1; flex-direction:column; padding:6px 2px; text-align:center; font-size:11px; gap:8px; }
+  .method-grid { gap:10px; }
+  .method-card { padding:16px 12px; font-size:14px; }
+  .method-card small { font-size:12px; }
+  .flow-actions { flex-wrap:wrap; }
+  .flow-actions .opt-primary { width:100%; }
+  .selection-table thead { display:none; }
+  .selection-table tbody { display:grid; gap:12px; }
+  .selection-table tr { display:grid; grid-template-columns:44px minmax(0,1fr); border:1px solid var(--opt-border); border-radius:12px; padding:10px; }
+  .selection-table td { border:0; padding:8px; width:auto !important; min-width:0; overflow-wrap:anywhere; }
+  .selection-table td:last-child { grid-column:2; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .selection-table td:last-child input { width:90px; }
+  .mobile-label, .mobile-document { display:block; }
+  .mobile-label { font-size:13px; }
+  .picking-paper { display:none; }
+  .picking-paper.document-open { display:block; }
+  .picking-review { margin-top:16px; }
+  .review-card { padding:14px; }
+  .review-fields { grid-template-columns:minmax(0,1fr) 85px; gap:10px; }
+  .opt-page .opt-header h1 { font-size:27px; }
+}

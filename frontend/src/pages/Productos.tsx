@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/api";
 import { useEffect, useState } from "react";
 
 import PageHeader from "../components/PageHeader";
@@ -80,8 +81,8 @@ function Productos() {
 
     try {
 
-      const respuesta = await fetch(
-        "http://127.0.0.1:8000/productos"
+      const respuesta = await apiFetch(
+        "/productos"
       );
 
       const datos = await respuesta.json();
@@ -276,8 +277,8 @@ function Productos() {
 
       try {
 
-        await fetch(
-          `http://127.0.0.1:8000/productos/${selectedProductId}`,
+        await apiFetch(
+          `/productos/${selectedProductId}`,
           {
             method: "DELETE",
           }

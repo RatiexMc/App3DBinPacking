@@ -1,3 +1,4 @@
+import { Drawer, useMediaQuery } from "@mui/material";
 import { NavLink } from "react-router-dom";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -12,7 +13,9 @@ import { useThemeContext } from "../theme/ThemeContext";
 import { colors } from "../theme/colors";
 
 function Sidebar() {
-  const { collapsed } = useSidebar();
+  const { collapsed: desktopCollapsed, mobileOpen, closeMobile } = useSidebar();
+  const mobile = useMediaQuery("(max-width:700px)");
+  const collapsed = !mobile && desktopCollapsed;
 
   const { darkMode } = useThemeContext();
 
@@ -59,8 +62,10 @@ function Sidebar() {
     transition: "all 0.25s ease",
   });
 
-  return (
+  const content = (
     <aside
+      aria-label="Navegación principal"
+      onClick={e => { if ((e.target as HTMLElement).closest("a")) closeMobile(); }}
       style={{
         width: collapsed ? "80px" : "260px",
 
@@ -158,13 +163,13 @@ function Sidebar() {
           gap: "8px",
         }}
       >
-        <NavLink to="/" style={menuItemStyle}>
+        <NavLink to="/" aria-label="Dashboard" style={menuItemStyle}>
           <DashboardIcon />
           {!collapsed && "Dashboard"}
         </NavLink>
 
         <NavLink
-          to="/productos"
+          to="/productos" aria-label="Productos"
           style={menuItemStyle}
         >
           <Inventory2Icon />
@@ -172,7 +177,7 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/camiones"
+          to="/camiones" aria-label="Camiones"
           style={menuItemStyle}
         >
           <LocalShippingIcon />
@@ -180,7 +185,7 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/fotopicking"
+          to="/fotopicking" aria-label="FotoPicking"
           style={menuItemStyle}
         >
           <PhotoCameraIcon />
@@ -188,14 +193,14 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/optimizacion"
+          to="/optimizacion" aria-label="Optimización"
           style={menuItemStyle}
         >
           <PsychologyIcon />
           {!collapsed && "Optimización"}
         </NavLink>
         <NavLink
-          to="/historial"
+          to="/historial" aria-label="Historial"
           style={menuItemStyle}
         >
           <HistoryIcon />
@@ -203,7 +208,7 @@ function Sidebar() {
         </NavLink>
 
         <NavLink
-          to="/configuracion"
+          to="/configuracion" aria-label="Configuración"
           style={menuItemStyle}
         >
           <SettingsIcon />
@@ -212,6 +217,7 @@ function Sidebar() {
       </div>
     </aside>
   );
+  return mobile ? <Drawer open={mobileOpen} onClose={closeMobile}>{content}</Drawer> : content;
 }
 
 export default Sidebar;

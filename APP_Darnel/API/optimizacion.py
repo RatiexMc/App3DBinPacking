@@ -3,7 +3,8 @@ import math
 from time import perf_counter
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from services.auth_service import usuario_actual
 from pydantic import BaseModel, Field, field_validator
 
 from database.conexion import conectar
@@ -44,10 +45,10 @@ def dimensiones_validas(valores):
 
 
 @router.post("/optimizar")
-def optimizar(solicitud: SolicitudOptimizacion):
+def optimizar(solicitud: SolicitudOptimizacion, usuario=Depends(usuario_actual)):
     entrada = solicitud.model_dump(mode="json", exclude={"solicitud_id"})
     try:
-        anterior = buscar_resultado(solicitud.solicitud_id)
+        anterior = buscar_resultado(solicitud.solicitud_id, usuario["id"])
         if anterior:
             if anterior["entrada"] != entrada:
                 raise HTTPException(409, "Esta solicitud corresponde a otro pedido. Inicie una nueva carga antes de continuar.")
@@ -141,7 +142,7 @@ def optimizar(solicitud: SolicitudOptimizacion):
         "reglas": resultado["reglas"],
     }
     try:
-        return guardar_resultado(solicitud.solicitud_id, entrada, productos, respuesta, tiempo_ms)
+        return guardar_resultado(solicitud.solicitud_id, entrada, productos, respuesta, tiempo_ms, usuario["id"])
     except Exception:
         logger.exception("Se calculó la carga, pero no se pudo guardar el historial")
         respuesta["historial_guardado"] = False

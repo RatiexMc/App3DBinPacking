@@ -1,3 +1,4 @@
+import { apiFetch } from "../services/api";
 import {
   useState,
   useEffect,
@@ -116,14 +117,14 @@ function CamionModal({
     try {
 
       const url = camion
-        ? `http://127.0.0.1:8000/camiones/${camion.id_camion}`
-        : "http://127.0.0.1:8000/camiones";
+        ? `/camiones/${camion.id_camion}`
+        : "/camiones";
 
       const metodo = camion
         ? "PUT"
         : "POST";
 
-      const respuesta = await fetch(
+      const respuesta = await apiFetch(
         url,
         {
           method: metodo,

@@ -1,0 +1,26 @@
+.session-loading { padding: 3rem; text-align: center; }
+.account-entry { min-height: 100dvh; max-width: 440px; margin: 0 auto; padding: 48px 20px 28px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+.account-brand { text-align: center; }
+.account-brand strong { display: inline-flex; align-items: baseline; gap: 10px; font-size: 32px; letter-spacing: -1.1px; font-weight: 750; color: var(--opt-text); }
+.account-brand strong span { font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--opt-muted); border-left: 1px solid var(--opt-border); padding-left: 10px; }
+.account-brand p { font-size: 13px; color: var(--opt-muted); margin-top: 8px; }
+.account-form { padding: 30px; border-radius: 10px; box-shadow: 0 5px 24px #00000008; }
+.account-form h1 { font-size: 23px; line-height: 1.3; letter-spacing: -.4px; font-weight: 650; margin: 0 0 8px; }
+.account-form > .opt-help { margin-top: 0; }
+.account-form .opt-alert { font-size: 13px; line-height: 1.5; margin-top: 20px; padding: 12px; border-radius: 6px; }
+.opt-page fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.account-form .opt-label, .settings-grid .opt-label { display: grid; gap: 8px; margin: 20px 0; font-size: 13px; font-weight: 500; }
+.account-form .opt-input { border-radius: 6px; min-height: 44px; }
+.account-form .settings-check { font-size: 13px; gap: 8px; margin: 4px 0; }
+.account-form input[type=checkbox] { width: 16px; height: 16px; accent-color: #005b96; }
+.account-submit { width: 100%; justify-content: center; margin: 22px 0; border-radius: 6px; }
+.account-form a { color: var(--opt-accent); font-weight: 600; }
+.account-form a:hover { text-decoration: underline; }
+.account-footer { text-align: center; font-size: 11px; line-height: 1.5; color: var(--opt-muted); }
+.profile-picture { display: flex; align-items: center; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
+.profile-picture > img, .profile-picture > span { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: var(--opt-tint); color: var(--opt-accent); display: grid; place-items: center; font-size: 2.4rem; }
+.profile-picture input { width: 100%; min-width: 0; max-width: 100%; }
+.profile-picture .opt-label { grid-template-columns: minmax(0, 1fr); }
+.profile-picture > div { min-width: 0; max-width: 100%; }
+@media(max-width: 480px) { .account-entry { padding: 28px 16px; gap: 22px; } .account-form { padding: 24px; } }
+
